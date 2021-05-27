@@ -1,0 +1,13 @@
+---
+name: Alpacca
+test: False
+logs: True
+default_algorithm_proxy: 6000
+version: 3
+modules:
+ - name : executive
+   downstream: 
+    - port: 2000
+      bind: False
+      type: PUB
+
