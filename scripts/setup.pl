@@ -18,21 +18,49 @@ eval  {
     die "Error Loading System Config: $error";
 };
 
+my $system_data = delete $config->{system};
+die "No System Data Found" unless $system_data;
 
 my $module_data = delete $config->{modules};
 die "No Module Data Found" unless $module_data;
+
 my $ticker_data = delete $config->{tickers};
 die "No Ticker Data Found" unless $ticker_data;
+
+my $proxy_data = delete $config->{proxies};
+die "No Proxy Data Found" unless $proxy_data;
+
+
 $system_name = ucfirst $system_name;
-my $version = $config->{version};
-my $test_mode = $config->{test};
 
-# Algorithm config entries
-my $algorithm_base_port = $config->{algorithm_base_port};
-my $algorithm_port_increment = $config->{algorithm_port_increment};
-my $algorithm_proxy_offset = $config->{algorithm_port_increment};
-my $algorithm_account_offset = $config->{algorithm_account_offset};
+# System Wide Data
+my $version = $system_data->{version};
+die "No System Version Specified" unless $system_data;
 
+my $test_mode = defined $system_data->{test} and $system_data->{test} eq "False" ? 1 : undef;
+warn "No Test Mode found, Assuming False" unless $system_data;
+
+my $algorithm_base_port = $system_data->{algorithm_base_port};
+die "No Algorithm Base Port Specified" unless $algorithm_base_port;
+
+my $algorithm_port_increment = defined $system_data->{algorithm_port_increment} ? $system_data->{algorithm_port_increment} : undef;
+warn "No Algorithm Increment found, Assuming 100" unless $algorithm_port_increment;
+$system_data->{algorithm_port_increment} ||= 100;
+
+my $algorithm_proxy_offset = $system_data->{algorithm_proxy_offset};
+die "No Algorithm Proxy Offset Specified" unless $algorithm_proxy_offset;
+
+my $algorithm_account_offset = $system_data->{algorithm_account_offset};
+die "No Algorithm Account Offset Specified" unless $algorithm_account_offset;
+
+my $account_broker_port = $system_data->{account_broker_port};
+die "No Account Broker Port Specified" unless $account_broker_port;
+
+my $log_proxy_port = $system_data->{log_proxy_port};
+die "No Log Proxy Port Found" unless $log_proxy_port;
+
+my $log_port = $system_data->{log_port};
+die "No Log Port Found" unless $log_port;
 
 print "Loading Config for $system_name Version: $version\n";
 print "Test Mode: $test_mode\n";
@@ -42,6 +70,20 @@ my $market;
 my $module_config;
 my $ticker_config;
 my $algorithm_config;
+my $proxy_config;
+
+# Startup Process
+# 1. Validate Configs
+# 1.5 Build Log Node
+# 2. Build Market Config
+# 3. Build Ticker Nodes (With Assoicated Algorithms)
+# 4. Build Proxies
+# 5. Build Outstanding Nodes
+# 6. Build Market Sources
+# 7. Build Broker
+# 8. Build Traders
+# 9. Build Executive
+# 10. Start The System!
 foreach (@$module_data) {
     
     my $module_name = $_->{name};
@@ -121,17 +163,31 @@ foreach (@$ticker_data) {
                 name => "$ticker_name.$a_name.US"
             }],
             downstream => [{
-                port => $current_port_address + $algorithm_proxy_offset
+                port => $current_port_address + $algorithm_proxy_offset,
                 bind => "False",
                 type => "PUB",
                 name => "$ticker_name.$a_name.DS"
             }]
-
+        };
+        $proxy_config->{"$a_name.proxy"} => {
+            name => $a_name,
+            upstream => [{
+                port => $current_port_address + $algorithm_proxy_offset,
+                bind => "True",
+                type => "XSUB"
+            }],
+            downstream => [{
+                port => $current_port_address + $algorithm_account_offset,
+                bind => "True",
+                type => "XPUB"
+            }]
         };
     }
-    $ticker_config->{ticker_name} = {
-        
+    $ticker_config->{$ticker_name} = {
+        name => $ticker_name
     };
+    
     $current_port_address+=$algorithm_port_increment;
 }
+
 print Dumper($algorithm_config);

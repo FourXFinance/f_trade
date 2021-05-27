@@ -22,8 +22,7 @@ if __name__ == "__main__":
     downstreams = sys.argv[2:]
     ticker_port = []
     if len(downstreams)%2 != 0:
-        print("Odd Number of TICKER: PORT pairs")
-        sys.exit(-1)
+        raise Exception("Odd number of ticker port pairs given")
     for i in range(0,len(downstreams),2):
         ticker = downstreams[i]
         port = downstreams[i+1]

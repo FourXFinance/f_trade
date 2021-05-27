@@ -62,11 +62,10 @@ class DownstreamController(Controller):
 class UpstreamController(Controller):
     def __init__(self) -> None:
         super().__init__()
-        pass
+        
     def add_stream(self, name, port, type, topic="0", bind=False):
         return super().add_stream(name, port, type, topic=topic, bind=bind)
-    def _consume(self, stream_name):
-        return
+
     def consume(self):
         if len(self.streams) == 0 :
             raise Exception("Upstream Controller has no streams!")

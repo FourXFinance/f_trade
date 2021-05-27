@@ -1,16 +1,17 @@
 ---
-name: Binance
-test: False
-logs: True
-version: 3
-lot_size: 25
-algorithm_base_port: 4000
-algorithm_port_increment: 100
-algorithm_proxy_offset: 51
-algorithm_account_offset: 52
-account_broker_port: 5000
-log_proxy_port: 9000
-log_port: 10000
+system:
+  name: Binance
+  test: False
+  logs: True
+  version: 3
+  lot_size: 25
+  algorithm_base_port: 4000
+  algorithm_port_increment: 100
+  algorithm_proxy_offset: 51
+  algorithm_account_offset: 52
+  account_broker_port: 5000
+  log_proxy_port: 9000
+  log_port: 10000
 modules:
  - name : executive
    downstream: 
@@ -28,24 +29,20 @@ modules:
    - 1m
    - 3m
    - 5m
-   - 15m
-   - 30m
-   - 1h
-   - 2h
-   - 6h
 tickers: # Each Ticker comes with a Proxy and an Account Node!
  - name: "DOGEUSDT"
    enabled: True
-   required_ticks:
-    - RT
-    - 1m
    algorithms:
-    - name: burnup
+    - name: echo
       enabled: True
-      paramaters:
-       window: 8
-       percent_grwoth: 0.4
-       investment: 100
+ - name: "SHIBUSDT"
+   enabled: False
+   algorithms:
+    - name: echo
+      enabled: True
+ - name: "BTC"
+   enabled: True
+   algorithms:
     - name: echo
       enabled: True
  - name: "ETHUSDT"
@@ -53,6 +50,10 @@ tickers: # Each Ticker comes with a Proxy and an Account Node!
    algorithms:
     - name: echo
       enabled: True
+proxies:
+ - name: log_proxy
+   upstream: 9000
+   downstream: 10000
 
     
       

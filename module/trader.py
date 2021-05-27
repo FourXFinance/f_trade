@@ -8,7 +8,6 @@ class Manager(Node):
     def __init__(self) -> None:
         super().__init__()
 
-
 if __name__ == "__main__":
     name = "Trader"
     ticker = sys.argv[0]

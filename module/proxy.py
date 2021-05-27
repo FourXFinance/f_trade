@@ -1,4 +1,3 @@
-  
 import sys
 sys.path.insert(1, 'lib')
 from module import Proxy

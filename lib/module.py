@@ -19,7 +19,7 @@ class Node:
         
     def add_downstream(self, name, port, type, topic="0", bind=False):
         self.downstream_controller.add_stream(name, port, type, topic, bind)
-        
+
     def enable(self):
         self.enabled = True
 
@@ -49,10 +49,17 @@ class Node:
         sys.exit(0)
 
 class Algorithm(Node):
-    def __init__(self, name, ticker, topic, upstream_port, downstream_port, algorithm_config=None, nobind=False):
+    def __init__(self, name, ticker, topic, upstream_port, downstream_port, nobind=False):
         super().__init__(name)
-        if algorithm_config:
-            self.algorithm_config = json.loads(algorithm_config)
+    def load_config(self):
+        try:
+            with open("config/generated.json") as config:
+                raw_config = json.load(config)
+        except FileNotFoundError:
+            print("Algorithm Config Is Missing!")
+        pass
+    def reload_config(self):
+        self.load_config()
     def setup():
         raise Exception("Override Me!")
     def run():
