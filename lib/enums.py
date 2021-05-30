@@ -1,8 +1,8 @@
 from enum import Enum
 
 class AcceptableKlineValues(Enum):
-    KLINE_INTERVAL_RT = 'RT' # Special Case
-    KLINE_INTERVAL_1MINUTE = '1m'
+    KLINE_INTERVAL_RT = 'RT' # Special Case for our system
+    KLINE_INTERVAL_1MINUTE = '1m' #These are all replicated from python-binance
     KLINE_INTERVAL_3MINUTE = '3m'
     KLINE_INTERVAL_5MINUTE = '5m'
     KLINE_INTERVAL_15MINUTE = '15m'

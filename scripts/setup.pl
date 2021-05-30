@@ -93,7 +93,7 @@ foreach (@$module_data) {
         $market = $_; 
         next;
     }
-    #print Dumper($_);
+
     my $ds = $_->{downstream};
     my @module_downstream = ();
     
@@ -110,7 +110,6 @@ foreach (@$module_data) {
                                     bind => $ds_bind
                                     };
     };
-    print Dumper(\@module_downstream);
     my @module_upstream = ();
     my $us = $_->{upstream};
      foreach my $upstream (@$us){
@@ -126,7 +125,6 @@ foreach (@$module_data) {
                                     bind => $us_bind
                                     };
     };
-    print Dumper(\@module_upstream);
     $module_config->{$module_name} = {
         name => $module_name,
         downstream => \@module_downstream,
@@ -160,17 +158,18 @@ foreach (@$ticker_data) {
                 port => $current_port_address,
                 bind => "False",
                 type => "SUB",
-                name => "$ticker_name.$a_name.US"
+                name => "$ticker_name.$a_name.UP"
             }],
             downstream => [{
                 port => $current_port_address + $algorithm_proxy_offset,
                 bind => "False",
                 type => "PUB",
-                name => "$ticker_name.$a_name.DS"
+                name => "$ticker_name.$a_name.DOWN"
             }]
         };
-        $proxy_config->{"$a_name.proxy"} => {
-            name => $a_name,
+    }
+    $proxy_config->{"$ticker_name.proxy"} = {
+            name => "$ticker_name.proxy",
             upstream => [{
                 port => $current_port_address + $algorithm_proxy_offset,
                 bind => "True",
@@ -182,7 +181,6 @@ foreach (@$ticker_data) {
                 type => "XPUB"
             }]
         };
-    }
     $ticker_config->{$ticker_name} = {
         name => $ticker_name
     };

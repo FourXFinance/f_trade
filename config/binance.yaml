@@ -23,7 +23,7 @@ modules:
    tick_module_port: 2000
    downstream:
     - port: 3000
-      bind: True
+      bind: True2
    tick_sources:
    - RT
    - 1m

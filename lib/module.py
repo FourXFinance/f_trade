@@ -1,6 +1,6 @@
 import sys
 sys.path.insert(1, 'lib')
-from utils import DownstreamController, UpstreamController
+from controller import DownstreamController, UpstreamController
 import zmq
 import json
 import signal
@@ -35,11 +35,11 @@ class Node:
     def consume_next(self):
         return self.upstream_controller.consume_next()
 
-    def consume_from(self, target_port):
-        return self.upstream_controller.consume_from(target_port)
+    def consume_from(self, target_stream=None):
+        return self.upstream_controller.consume_from(target_stream)
 
-    def produce_for(self, source_port):
-        return self.downstream_controller.produce_from(source_port)
+    def produce_for(self, message, target_stream=None):
+        return self.downstream_controller.produce_for(message,target_stream)
 
     def run(self):
         raise Exception("Override Me!")
@@ -71,11 +71,6 @@ class Algorithm(Node):
     def reset():
         raise Exception("Override Me!")
 
-class Ticker(Node):
-    def __init__(self, name, id):
-        super().__init__(name, id=id)
-    def run(self):
-        return super().run()
 
 class Proxy(Node):
     def __init__(self, name, id):
