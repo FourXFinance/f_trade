@@ -7,10 +7,9 @@ import json
 class Ticker(Node):
     def __init__(self) -> None:
         super().__init__()
-    def consume_next(self):
-
     def run():
         while True:
+            pass
 
 if __name__ == "__main__":
     name = "Ticker"

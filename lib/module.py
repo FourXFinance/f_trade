@@ -1,6 +1,6 @@
 import sys
 sys.path.insert(1, 'lib')
-from controller import DownstreamController, UpstreamController
+from controller import Controller
 import zmq
 import json
 import signal
@@ -10,8 +10,8 @@ class Node:
     def __init__(self, name, id=None):
         self.context = zmq.Context()
         self.name = name
-        self.upstream_controller = UpstreamController()
-        self.downstream_controller = DownstreamController()
+        self.upstream_controller = Controller()
+        self.downstream_controller = Controller()
         signal.signal(signal.SIGINT, self.shutdown)
 
     def add_upstream(self, name, port, type, topic="0", bind=False):

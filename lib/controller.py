@@ -1,6 +1,7 @@
 from os import name
 import zmq
 
+# A Stream is a ZMQ socket
 class Stream:
     def __init__(self, name, port, type, topic="0", bind=False) -> None:
         self.context = zmq.Context()
@@ -20,85 +21,52 @@ class Stream:
             self.socket.connect("tcp://localhost:%d" % self.port)
             print (str(self.port))
             if self.type == zmq.SUB:
-                print ("Setting Topic to " + str(self.topic))
                 self.socket.setsockopt_string(zmq.SUBSCRIBE, str(self.topic))
-    def getStream(self):
+
+    def get_stream(self):
         return self.socket
 
 class Controller:
     def __init__(self) -> None:
         self.streams = {}
         self.poller = zmq.Poller()
-    def add_stream(self, name, port, type, topic="0", bind=False):
+    
+    def add_stream(self, name, port, type, topic="0", bind=False, register=True):
         if name in self.streams:
             raise Exception("Controller already has stream")
         self.streams[name] = Stream(name, port, type, topic, bind)
-        print (self.streams[name].name)
-        self.poller.register(self.streams[name].getStream(), zmq.POLLIN)
-
-    def get_list_of_streams(self):
-        return self.streams.keys()
-            
-class DownstreamController(Controller):
-    def __init__(self) -> None:
-        super().__init__()
-    def add_stream(self, name, port, type, topic="0", bind=False):
-        super().add_stream(name, port, type, topic=topic, bind=bind)
-        
-    def produce(self, message):
-        if len(self.streams) == 0 :
-            raise Exception("Downstream Controller has no streams!")
-        elif len(self.streams) > 1 :
-            raise Exception("Downstream Controller has more than one stream!")
-        target_stream = self.streams[list(self.streams.keys())[0]]
-        target_stream.getStream().send_string("%d %s" % (target_stream.topic ,message))
-
-    def produce_for(self, message, target_stream=None):
-        if len(self.streams) == 0 :
-            raise Exception("Downstream Controller has no streams!")
-        elif len(self.streams) == 1 :
-            return self.produce(message)
-        target_stream = self.streams[target_stream]
-        target_stream.getStream().send_string("%d %s" % (target_stream.topic ,message))
+        if register:
+            self.poller.register(self.streams[name].get_stream(), zmq.POLLIN)
     
-class UpstreamController(Controller):
-    def __init__(self) -> None:
-        super().__init__()
-        
-    def add_stream(self, name, port, type, topic="0", bind=False):
-        super().add_stream(name, port, type, topic=topic, bind=bind)
+    def get_stream(self, name):
+        return self.streams[name]
+    
+    def get_streams(self):
+        return self.streams
+    
+    # Communication Methods
+    # Designed to be invarient of underlying stream type
 
-    def consume(self):
-        if len(self.streams) == 0 :
-            raise Exception("Upstream Controller has no streams!")
-        elif len(self.streams) > 1 :
-            raise Exception("Upstream Controller has more than one stream!")
-        target_stream = self.streams[list(self.streams.keys())[0]]
-        return target_stream.getStream().recv()
+    def send(self, message):
+        s = self.streams[list(self.streams.keys())[0]]
+        s.send(message.encode('utf-8'))
+        pass
 
-    def consume_from(self,target_stream=None):
-        if len(self.streams) == 0 :
-            raise Exception("Upstream Controller has no streams!")
-        elif len(self.streams) == 1 :
-            return self.consume()
-        stream = None
-        try:
-            stream = self.streams[target_stream]
-        except KeyError as KE:
-            print ("Stream: %s does not exist" % (target_stream))
-            return None
-        return stream.getStream().recv()
+    def send_to(self, target_stream, message):
+        s = self.streams[target_stream]
+        s.send(message.encode('utf-8'))
+        pass
 
-    def consume_next(self):
-        if len(self.streams) == 0 :
-            raise Exception("Upstream Controller has no streams!")
+    def recv(self):
+        r = self.streams[list(self.streams.keys())[0]]
+        r.recv()
+        pass
+
+    def recv_from(self, target_stream, message):
+        r = self.streams[target_stream]
+        r.recv()
+        pass
+
+    def recv_next(self):
         streams = dict(self.poller.poll())
         return streams
-
-class LoggingController(Controller):
-    def __init__(self) -> None:
-        super().__init__()
-
-class ExecutiveController(Controller):
-    def __init__(self) -> None:
-        super().__init__()
