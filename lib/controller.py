@@ -67,6 +67,6 @@ class Controller:
         r.recv()
         pass
 
-    def recv_next(self):
+    def poll(self):
         streams = dict(self.poller.poll())
         return streams

@@ -10,7 +10,7 @@ class TestProducer(Node):
         super().__init__(name)
         self.ticker = ticker
         self.add_downstream("RT", 4000, zmq.REQ, "0", bind=False)
-        self.downstream = self.downstream_controller.get_streams()["RT"].get_stream()
+        self.downstream = self.downstream_controller.get_streams().get("RT").get_stream()
         #self.add_downstream("1M", 4001, zmq.PUB, "0", bind=True)
         #self.add_downstream("2M", 4002, zmq.PUB, "0", bind=True)
         #self.add_downstream("3M", 4003, zmq.PUB, "0", bind=True)
