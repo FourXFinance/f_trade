@@ -21,6 +21,7 @@ class Stream:
             self.socket.connect("tcp://localhost:%d" % self.port)
             print (str(self.port))
             if self.type == zmq.SUB:
+                print(self.topic)
                 self.socket.setsockopt_string(zmq.SUBSCRIBE, str(self.topic))
 
     def get_stream(self):
@@ -50,22 +51,22 @@ class Controller:
     def send(self, message):
         s = self.streams[list(self.streams.keys())[0]]
         s.send(message.encode('utf-8'))
-        pass
+        return True
 
     def send_to(self, target_stream, message):
         s = self.streams[target_stream]
         s.send(message.encode('utf-8'))
-        pass
+        return True
 
     def recv(self):
         r = self.streams[list(self.streams.keys())[0]]
-        r.recv()
-        pass
+        message = r.get_stream().recv()
+        return message
 
     def recv_from(self, target_stream, message):
         r = self.streams[target_stream]
-        r.recv()
-        pass
+        message = r.recv()
+        return message
 
     def poll(self):
         streams = dict(self.poller.poll())

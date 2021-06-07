@@ -26,11 +26,11 @@ class Node:
     def disable(self):
         self.enabled = False
 
-    def consume(self):
-        return self.upstream_controller.consume()
+    def recv(self):
+        return self.upstream_controller.recv()
 
-    def produce(self):
-        return self.downstream_controller.produce()
+    def send(self):
+        return self.downstream_controller.send()
 
     def consume_next(self):
         return self.upstream_controller.consume_next()

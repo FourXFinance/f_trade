@@ -9,21 +9,26 @@ class TestConsumer(Node):
     def __init__(self, name, ticker) -> None:
         super().__init__(name)
         self.ticeker = ticker
-        self.add_upstream("RT", 4001, zmq.REP, "0", bind=False)
+        self.add_upstream("RT", 4001, zmq.SUB, "0", bind=False)
         self.upstream = self.upstream_controller.get_streams().get("RT").get_stream()
+        #self.upstream.hwm = 1
         #self.add_upstream("1M", 4001, zmq.SUB, "0", bind=False)
         #self.add_upstream("2M", 4002, zmq.SUB, "0", bind=False)
         #self.add_upstream("3M", 4003, zmq.SUB, "0", bind=False)
     def run(self):
         while True:
-            message = self.upstream.recv()
+            message = self.recv()
             print(message)
-            message = self.upstream.send(b"World")
+            #message = self.upstream.send(b"World")
             time.sleep(1)
 
 if __name__ == "__main__":
     name = "Test Node"
-    ticker = sys.argv[1]
+    ticker = None
+    try:
+        ticker = sys.argv[1]
+    except IndexError as IE:
+        ticker = "TESTTEST"
     T = TestConsumer(name,ticker)
     T.run()
     
