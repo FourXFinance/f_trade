@@ -24,7 +24,7 @@ if ($opt_a) {
     @libs= ('module', 'algorithm');
 }
  
-print("The Following Nodes are Running\n");
+print("The Following F Trader System Nodes exist:\n");
 for my $lib (@libs) {
     my @found_modules = split ('\n',  `pgrep -laf "python3 $lib/*"`);
     foreach(@found_modules) {        

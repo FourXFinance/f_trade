@@ -188,4 +188,6 @@ foreach (@$ticker_data) {
     $current_port_address+=$algorithm_port_increment;
 }
 
+
+# Output Generated Config Files
 print Dumper($algorithm_config);

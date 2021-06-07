@@ -26,6 +26,10 @@ def load_downstream_from_config():
         exit(-1)
     return loadded_config
 
+def heartbeat():
+    # Check to make sure every single node is alive.
+    pass
+
 if __name__ == "__main__":
     name = "Executive"
     downstream_port = None

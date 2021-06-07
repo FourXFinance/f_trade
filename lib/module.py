@@ -4,6 +4,7 @@ from controller import Controller
 import zmq
 import json
 import signal
+from enums import AcceptableKlineValues
 
 class Node:
     enabled = False
@@ -47,10 +48,15 @@ class Node:
     def shutdown(self, sig, frame):
         print("Safe Shutdown Process")
         sys.exit(0)
-
+    def heartbeat():
+        pass
 class Algorithm(Node):
     def __init__(self, name, ticker, topic, upstream_port, downstream_port, nobind=False):
         super().__init__(name)
+        self.data_controller = Controller()
+        self.upstream_controller = Controller()
+        self.downstream_controller = Controller()
+        
     def load_config(self):
         try:
             with open("config/generated.json") as config:
@@ -58,16 +64,43 @@ class Algorithm(Node):
         except FileNotFoundError:
             print("Algorithm Config Is Missing!")
         pass
+    def add_data_clock(self, port, name):
+        self.data_controller.add_stream(name, port, type=zmq.SUB)
+
+    def remove_data_clock(self, name):
+        # TODO: Close the connection properly.
+        pass
+
+    def recv_config_data(self):
+        pass
+
+    def recv_ready_signal(self):
+        pass
+
+    def recv_all_data(self):
+        pass
+
+    def recv_data(self, clock=AcceptableKlineValues.KLINE_INTERVAL_RT):
+        # Pull it from the correct data port
+        pass
+
     def reload_config(self):
+        # self.clean()
+        # self.disable
         self.load_config()
+        # self.enable
     def setup():
         raise Exception("Override Me!")
+
     def run():
         raise Exception("Override Me!")
+
     def precheck():
         raise Exception("Override Me!")
+
     def check():
         raise Exception("Override Me!")
+
     def reset():
         raise Exception("Override Me!")
 
