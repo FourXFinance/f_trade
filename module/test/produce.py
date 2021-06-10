@@ -9,9 +9,8 @@ class TestProducer(Node):
     def __init__(self, name, ticker) -> None:
         super().__init__(name)
         self.ticker = ticker
-        self.add_downstream("RT", 4001, zmq.PUB, "0", bind=True)
-        self.downstream = self.downstream_controller.get_streams().get("RT").get_stream()
-        self.downstream.hwm = 1        
+        self.add_downstream("TEST", 5556, zmq.PUB, "0", bind=True)
+        self.downstream = self.downstream_controller.get_stream("TEST").get_socket()
         #self.add_downstream("1M", 4001, zmq.PUB, "0", bind=True)
         #self.add_downstream("2M", 4002, zmq.PUB, "0", bind=True)
         #self.add_downstream("3M", 4003, zmq.PUB, "0", bind=True)

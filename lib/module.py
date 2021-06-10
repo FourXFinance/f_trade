@@ -13,13 +13,15 @@ class Node:
         self.name = name
         self.upstream_controller = Controller()
         self.downstream_controller = Controller()
+        self.executive_controller = Controller()
+        self.logging_controller = Controller()
         signal.signal(signal.SIGINT, self.shutdown)
 
-    def add_upstream(self, name, port, type, topic="0", bind=False):
-        self.upstream_controller.add_stream(name, port, type, topic, bind)
+    def add_upstream(self, name, port, type, topic="0", bind=False, register=False):
+        self.upstream_controller.add_stream(name, port, type, topic, bind, register)
         
-    def add_downstream(self, name, port, type, topic="0", bind=False):
-        self.downstream_controller.add_stream(name, port, type, topic, bind)
+    def add_downstream(self, name, port, type, topic="0", bind=False, register=False):
+        self.downstream_controller.add_stream(name, port, type, topic, bind, register)
 
     def enable(self):
         self.enabled = True
@@ -50,13 +52,10 @@ class Node:
         sys.exit(0)
     def heartbeat():
         pass
+
 class Algorithm(Node):
     def __init__(self, name, ticker, topic, upstream_port, downstream_port, nobind=False):
         super().__init__(name)
-        self.data_controller = Controller()
-        self.upstream_controller = Controller()
-        self.downstream_controller = Controller()
-        
     def load_config(self):
         try:
             with open("config/generated.json") as config:

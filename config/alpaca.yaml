@@ -1,5 +1,6 @@
 ---
 name: Alpacca
+market: alpaca
 test: False
 logs: True
 default_algorithm_proxy: 6000

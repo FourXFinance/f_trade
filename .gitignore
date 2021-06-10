@@ -2,3 +2,7 @@ __pycache__/*
 lib/__pycache__/*
 config/generated/*
 credentials.json
+env/*
+env
+module/view/view/__pycache__/*
+module/view/view/db.*

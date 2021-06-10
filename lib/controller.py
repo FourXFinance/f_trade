@@ -1,3 +1,7 @@
+import sys
+from time import time
+sys.path.insert(1, 'lib')
+from constants import POLLER_TIMEOUT
 from os import name
 import zmq
 
@@ -14,31 +18,35 @@ class Stream:
         self.setup_stream()
 
     def setup_stream(self):
-        self.socket = self.context.socket(self.type)
+        self.socket = self.context.socket(self.type)        
         if self.bind:
             self.socket.bind("tcp://*:%d" % self.port)
+            # self.socket.set_hwm(1)
         else:
             self.socket.connect("tcp://localhost:%d" % self.port)
-            print (str(self.port))
             if self.type == zmq.SUB:
-                print(self.topic)
                 self.socket.setsockopt_string(zmq.SUBSCRIBE, str(self.topic))
+                # self.socket.set_hwm(1)
 
-    def get_stream(self):
+    def get_socket(self):
         return self.socket
 
 class Controller:
     def __init__(self) -> None:
         self.streams = {}
         self.poller = zmq.Poller()
+        self.PTIMEOUT = POLLER_TIMEOUT
     
     def add_stream(self, name, port, type, topic="0", bind=False, register=True):
         if name in self.streams:
             raise Exception("Controller already has stream")
         self.streams[name] = Stream(name, port, type, topic, bind)
         if register:
-            self.poller.register(self.streams[name].get_stream(), zmq.POLLIN)
+            self.poller.register(self.streams[name].get_socket(), zmq.POLLIN)
     
+    def get_stream_raw(self, name):
+        return self.get_stream(name).get_socket()
+
     def get_stream(self, name):
         return self.streams[name]
     
@@ -68,6 +76,6 @@ class Controller:
         message = r.recv()
         return message
 
-    def poll(self):
-        streams = dict(self.poller.poll())
+    def poll(self, timeout=POLLER_TIMEOUT):              
+        streams = dict(self.poller.poll(timeout))
         return streams

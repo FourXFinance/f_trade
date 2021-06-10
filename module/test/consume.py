@@ -8,10 +8,9 @@ import json
 class TestConsumer(Node):
     def __init__(self, name, ticker) -> None:
         super().__init__(name)
-        self.ticeker = ticker
-        self.add_upstream("RT", 4001, zmq.SUB, "0", bind=False)
-        self.upstream = self.upstream_controller.get_streams().get("RT").get_stream()
-        #self.upstream.hwm = 1
+        self.ticker = ticker
+        self.add_upstream("RT", 4001, zmq.REQ, "0", bind=False)
+        self.upstream = self.upstream_controller.get_stream("RT")
         #self.add_upstream("1M", 4001, zmq.SUB, "0", bind=False)
         #self.add_upstream("2M", 4002, zmq.SUB, "0", bind=False)
         #self.add_upstream("3M", 4003, zmq.SUB, "0", bind=False)
@@ -20,7 +19,7 @@ class TestConsumer(Node):
             message = self.recv()
             print(message)
             #message = self.upstream.send(b"World")
-            time.sleep(1)
+            time.sleep(5)
 
 if __name__ == "__main__":
     name = "Test Node"
