@@ -4,5 +4,5 @@ config/generated/*
 credentials.json
 env/*
 env
-module/view/view/__pycache__/*
-module/view/view/db.*
+module/view/django/__pycache__/*
+module/view/django/db.*
