@@ -76,6 +76,8 @@ class Controller:
         message = r.recv()
         return message
 
-    def poll(self, timeout=POLLER_TIMEOUT):              
+    def recv_snapshot(self, timeout=POLLER_TIMEOUT):              
         streams = dict(self.poller.poll(timeout))
-        return streams
+        for stream in streams:
+            yield stream # Should check on the performance of this.
+        return None
