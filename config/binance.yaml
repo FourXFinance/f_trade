@@ -7,12 +7,13 @@ system:
   version: 3
   lot_size: 25
   algorithm_base_port: 4000
-  algorithm_port_increment: 100
+  algorithm_port_increm0ent: 100
   algorithm_proxy_offset: 51
   algorithm_account_offset: 52
   account_broker_port: 5000
   log_proxy_port: 9000
   log_port: 10000
+  supported_klines: all
 modules:
  - name : executive
    downstream: 
