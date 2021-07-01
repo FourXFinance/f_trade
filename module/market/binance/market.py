@@ -6,7 +6,8 @@ from module import Node
 from enums import AcceptableKlineValues
 import zmq
 import json
-import datetime
+from datetime import datetime
+import time
 
 from binance import Client, ThreadedWebsocketManager, AsyncClient
 import asyncio
@@ -35,39 +36,31 @@ class Worker(Node):
 
     async def is_market_open(self):
         status = await self.get_market_status()
-        return  status["status"] == 0
-
-    async def get_historical_kline_data_for_ticker(self, ticker_name, ticker_topic, time_start, time_end=None):
-        klines = None
-        if time_start == None:
-            klines = await self.client.get_historical_klines(ticker_name, self.kline_interval, time_start)
-        else:
-            klines = await self.client.get_historical_klines(ticker_name, self.kline_interval, time_start, time_end)
-        kline_data =  np.array(klines)
-        df = pd.DataFrame(data=kline_data)
-        self.produce(df.to_json(),ticker_topic)  
-
+        return status["status"] == 0
+        
     async def get_kline_data_for_ticker(self, ticker_name, ticker_topic):
-            raw_data = await self.client.get_recent_trades(symbol=ticker_name, limit=50)
+            raw_data = await self.client.get_klines(symbol=self.ticker, interval=self.interval)
             recent_trades =  np.array(raw_data)
             df = pd.DataFrame(data=recent_trades)
-            self.produce(df.to_json(),ticker_topic)            
+            # TODO We have this data, what do we do with it        
     
-    async def get_market_data_for_ticker(self, ticker_name, ticker_topic):
-        raw_data = await self.client.get_recent_trades(symbol=ticker_name, limit=50)
+    async def get_last_trades(self, ticker_name, limit=50):
+        raw_data = await self.client.get_recent_trades(symbol=ticker_name, limit=limit)
         recent_trades =  np.array(raw_data)
         df = pd.DataFrame(data=recent_trades)
-        self.produce(df.to_json(),ticker_topic)
+        # TODO We have this data, what do we do with it
 
-    async def get_market_data_for_tracked_tickers(self):
+    async def get_data_for_ticker(self, ticker):
+        pass
+    async def get_new_data(self):
         tickers = self.tracked_tickers
         
         # res = await asyncio.gather(self.get_market_data_for_ticker(ticker[0], ticker[1]) for ticker in tickers)
         await asyncio.gather(
-                            self.get_market_data_for_ticker(self.tracked_tickers[0], 0),
-                            self.get_market_data_for_ticker(self.tracked_tickers[1], 1),
-                            self.get_market_data_for_ticker(self.tracked_tickers[2], 2),
-                            self.get_market_data_for_ticker(self.tracked_tickers[3], 3)
+                            self.get_data_for_ticker(self.tracked_tickers[0], 0),
+                            self.get_data_for_ticker(self.tracked_tickers[1], 1),
+                            self.get_data_for_ticker(self.tracked_tickers[2], 2),
+                            self.get_data_for_ticker(self.tracked_tickers[3], 3)
                             )
     async def run(self):
         await self.load_market_config()
@@ -94,7 +87,7 @@ if __name__ == "__main__":
     tickers = sys.argv[3:]
     W = Worker("binance" + "." + name + "." + interval, interval, tickers)
     loop = asyncio.get_event_loop()
-    loop.run_until_complete(MN.run())
+    loop.run_until_complete(W.run())
 
 
 
