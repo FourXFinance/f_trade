@@ -4,6 +4,7 @@ import pandas as pd
 import numpy as np
 from module import Node
 from enums import AcceptableKlineValues, Sleep
+from utils import get_sleep_unit_for_interval
 import zmq
 import json
 from datetime import datetime
@@ -65,7 +66,7 @@ class Worker(Node):
             return False
         recent_trades =  np.array(raw_data)
         df = pd.DataFrame(data=recent_trades)
-        # TODO We have this data, what do we do with it
+        self.send_to("DATA", df.to_json())
         return True
 
     async def get_data_for_ticker(self, ticker):
@@ -98,7 +99,7 @@ class Worker(Node):
             later = datetime.now()
             difference = (later - now).total_seconds()
             # print(str(tick_count) + " Took " + str(round(difference,3))  + " seconds")
-            time.sleep(0.8)
+            time.sleep(get_sleep_unit_for_interval(self.interval))
 
 if __name__ == "__main__":
     name = "market"
