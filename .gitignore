@@ -6,3 +6,5 @@ env/*
 env
 module/view/django/__pycache__/*
 module/view/django/db.*
+config/secrets/binance.json
+**/__pycache__/
