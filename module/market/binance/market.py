@@ -54,6 +54,7 @@ class Worker(Node):
             return False
         recent_trades =  np.array(raw_data)
         df = pd.DataFrame(data=recent_trades)
+        self.send_to("DATA", df.to_json())
         return True
     
     async def get_last_trades(self, ticker_name, limit=50):

@@ -29,7 +29,10 @@ class Stream:
                 # self.socket.set_hwm(1)
 
     def get_socket(self):
-        return self.socket
+        return self.socket\
+
+    def send(self, message):
+        self.socket.send(message)
 
 class Controller:
     def __init__(self) -> None:
