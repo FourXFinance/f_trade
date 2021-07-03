@@ -79,6 +79,7 @@ class Worker(Node):
         tickers = self.tracked_tickers
         
         # res = await asyncio.gather(self.get_market_data_for_ticker(ticker[0], ticker[1]) for ticker in tickers)
+        # TODO: This should accomodate as many tickers as supplied.
         await asyncio.gather(
                             self.get_data_for_ticker(self.tickers[0]),
                             self.get_data_for_ticker(self.tickers[1]),
