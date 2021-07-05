@@ -1,6 +1,7 @@
 import sys
 sys.path.insert(1, 'lib')
 from enums import AcceptableKlineValues, Sleep
+from util import Trade
 
 sleep_mappings = {
     'RT' : Sleep.SLEEP_RT,
@@ -24,3 +25,8 @@ def get_sleep_unit_for_interval(interval):
         return 5
     else:
         return res.value
+
+class Trade(Trade):
+    market = "Binance"
+    def __init__(self) -> None:
+        pass

@@ -5,20 +5,23 @@ import zmq
 import json
 import time
 from datetime import datetime
-from binance import Client, ThreadedWebsocketManager, AsyncClient
-import asyncio
+from binance import Client, ThreadedWebsocketManager
 import numpy as np
 import pandas as pd
-
+import math
 
 
 class Account(Node):
+    ticker_config = {}
+    open_trades = 0 # Cache Open Trades.
+    max_open_trades = 10
+    precision = 0
     def __init__(self,name, downstream_port,ticker) -> None:
         super().__init__(name)
         self.ticker = ticker
         self.add_downstream("DATA", downstream_port, zmq.PUB, bind=True, register=False)
 
-    async def load_market_config(self): 
+    def load_market_config(self): 
         try:
             with open("config/secrets/binance.json") as user_credentials:
                 raw_credentials = json.load(user_credentials)
@@ -28,52 +31,70 @@ class Account(Node):
             print("Error, config/secrets/binance.json file not found")
             raise FileNotFoundError
 
-    async def connect_to_market(self, test_mode = False):
-        self.client  = await AsyncClient.create(self.API_KEY, self.SECRET_KEY, testnet=test_mode)
+    def connect_to_market(self, test_mode = False):
+        self.client  = Client(self.API_KEY, self.SECRET_KEY, testnet=test_mode)
 
-    async def get_market_status(self):
-        return await self.client.get_system_status()
+    def get_market_status(self):
+        return self.client.get_system_status()
 
-    async def is_market_open(self):
-        status = await self.get_market_status()
+    def is_market_open(self):
+        status = self.get_market_status()
         return status["status"] == 0
         
-    async def get_account_data(self):
-        raw_data = await self.client.get_open_orders(symbol=self.ticker)
+    def get_account_data(self):
+        raw_data = self.client.get_open_orders(symbol=self.ticker)
         recent_trades =  np.array(raw_data)
         df = pd.DataFrame(data=recent_trades)
         return df
 
-    async def create_order(self, order):
+    def get_ticker_config_from_market(self):
+        raw_data = self.client.get_symbol_info(symbol=self.ticker)
+        filters = raw_data["filters"]
+        
+        for f in filters:
+            print(f)
+            if f["filterType"] == "PRICE_FILTER":
+                self.tick_size = float(f["tickSize"])
+                ts = self.tick_size
+                ts = 1/ts
+                self.precision = int(math.log10(ts)) # Use this for rounding!
+            if f["filterType"] == "LOT_SIZE":
+                self.min_qty = float(f["minQty"]) # Minimum number of units we can purchase
+            
         pass
-    
-    async def run(self):
-        await self.load_market_config()
-        await self.connect_to_market()
+
+    def create_order(self, order):
+        #TODO: Build a valid order by taking in the algorithm's result and 'shaping'
+        # it to be Binance compatible
+        pass
+
+    def run(self):
+        self.load_market_config()
+        self.connect_to_market()
+        self.get_ticker_config_from_market()
+        # TODO: Get Clock Signal from Executive!
+        # If the above functions pass, we are ready to start consuming information
         tick_count = 0
         # Accounts should wait for an algorithm to be ready. Then it will fetch new account data.
         while True:
             # data_in = self.recv...
-            tick_count+=1
-            now = datetime.now()
-            acc_data = None
             try:
-               acc_data = await self.get_account_data()
-               print(acc_data)
+               # Check to see if we have too many open trades or not
+                if self.open_trades >= self.max_open_trades:
+                   orders = self.client.get_open_orders(symbol=self.ticker)
+                   self.open_trades = len(orders)
+                if self.open_trades >= self.max_open_trades:
+                    # Sorry, nothing to do here! We have exausted the maximum number of open trades
+                    continue
             except Exception as e:
                 print("Caught Exception: " + str(e))
-            later = datetime.now()
-            difference = (later - now).total_seconds()
-            # print(str(tick_count) + " Took " + str(round(difference,3))  + " seconds")
-            time.sleep(1)
             
 if __name__ == "__main__":
-    name = "Account Data"
+    name = "Account"
     downstream_port = int(sys.argv[1])
     ticker = sys.argv[2]
     A = Account(name, downstream_port, ticker)
-    loop = asyncio.get_event_loop()
-    loop.run_until_complete(A.run())
+    A.run()
     
 
 
