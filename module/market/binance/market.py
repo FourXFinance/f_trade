@@ -1,5 +1,7 @@
 import sys
 sys.path.insert(1, 'lib')
+sys.path.insert(1, 'module/market/binance')
+from node import BinanceNode
 import pandas as pd
 import numpy as np
 from module import Node
@@ -14,37 +16,18 @@ from binance import Client, ThreadedWebsocketManager, AsyncClient
 import asyncio
 # This is a tick Node. You will run one of these for every time interval
 
-class Worker(Node):
+class MarketWorker(BinanceNode):
     def __init__(self, name, downstream_port, interval, tickers,id=None) -> None:
         self.interval = interval
         self.downstream_port = downstream_port
         self.tickers = tickers
         super().__init__(name)
         self.tracked_tickers = tickers
-        self.setup()
-    def setup(self):
-        self.add_downstream("DATA", self.downstream_port, zmq.PUB, "0", bind=True, register=False)
-    # The Market config contains the API KEY and SECRET KEY for Binance    
-    async def load_market_config(self): 
-        try:
-            with open("config/secrets/binance.json") as user_credentials:
-                raw_credentials = json.load(user_credentials)
-                self.API_KEY = raw_credentials["API_KEY"]
-                self.SECRET_KEY = raw_credentials["SECRET_KEY"]
-        except FileNotFoundError:
-            print("Error, config/secrets/binance.json file not found")
-            raise FileNotFoundError
-  
-    async def connect_to_market(self, test_mode = False):
-        self.client  = await AsyncClient.create(self.API_KEY, self.SECRET_KEY, testnet=test_mode)
+        self.add_downstream("DATA", self.downstream_port, zmq.PUB, "0", bind=True, register=False)     
 
-    async def get_market_status(self):
-        return await self.client.get_system_status()
+    def create_market_connection(self, test_mode = False):
+        self.client  = Client(self.API_KEY, self.SECRET_KEY, testnet=test_mode)
 
-    async def is_market_open(self):
-        status = await self.get_market_status()
-        return status["status"] == 0
-        
     async def get_kline_data_for_ticker(self, ticker_name):
         raw_data = None
         try:
@@ -87,8 +70,6 @@ class Worker(Node):
                             self.get_data_for_ticker(self.tickers[3])
                             )
     async def run(self):
-        await self.load_market_config()
-        await self.connect_to_market()
         tick_count = 0
         while True:
             tick_count+=1
@@ -109,9 +90,9 @@ if __name__ == "__main__":
     if interval not in [item.value for item in AcceptableKlineValues]:
         raise Exception("Error Unknown Time Interval: " + interval)
     tickers = sys.argv[3:]
-    W = Worker("binance" + "." + name + "." + interval, downstream , interval, tickers)
+    MW = MarketWorker("binance" + "." + name + "." + interval, downstream , interval, tickers)
     loop = asyncio.get_event_loop()
-    loop.run_until_complete(W.run())
+    loop.run_until_complete(MW.run())
 
 
 

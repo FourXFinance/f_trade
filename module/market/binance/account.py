@@ -1,6 +1,8 @@
 import sys
 sys.path.insert(1, 'lib')
+sys.path.insert(1, 'module/market/binance')
 from module import Node
+from node import BinanceNode
 import zmq
 import json
 import time
@@ -11,41 +13,21 @@ import pandas as pd
 import math
 
 
-class Account(Node):
+class Account(BinanceNode):
     ticker_config = {}
     open_trades = 0 # Cache Open Trades.
     max_open_trades = 10
     precision = 0
+    lot_price_size = 25 # IN USDT
     def __init__(self,name, downstream_port,ticker) -> None:
         super().__init__(name)
         self.ticker = ticker
         self.add_downstream("DATA", downstream_port, zmq.PUB, bind=True, register=False)
 
-    def load_market_config(self): 
-        try:
-            with open("config/secrets/binance.json") as user_credentials:
-                raw_credentials = json.load(user_credentials)
-                self.API_KEY = raw_credentials["API_KEY"]
-                self.SECRET_KEY = raw_credentials["SECRET_KEY"]
-        except FileNotFoundError:
-            print("Error, config/secrets/binance.json file not found")
-            raise FileNotFoundError
-
-    def connect_to_market(self, test_mode = False):
-        self.client  = Client(self.API_KEY, self.SECRET_KEY, testnet=test_mode)
-
-    def get_market_status(self):
-        return self.client.get_system_status()
-
-    def is_market_open(self):
-        status = self.get_market_status()
-        return status["status"] == 0
-        
     def get_account_data(self):
         raw_data = self.client.get_open_orders(symbol=self.ticker)
-        recent_trades =  np.array(raw_data)
-        df = pd.DataFrame(data=recent_trades)
-        return df
+        # Do Something with Account Data?
+        pass
 
     def get_ticker_config_from_market(self):
         raw_data = self.client.get_symbol_info(symbol=self.ticker)
@@ -66,12 +48,12 @@ class Account(Node):
     def create_order(self, order):
         #TODO: Build a valid order by taking in the algorithm's result and 'shaping'
         # it to be Binance compatible
+        target_sale_price = round(order.target_sale_price, self.precision)
+        # In Future, we should calculate a dynamic lot size
+        # Send Order To Broker
         pass
 
     def run(self):
-        self.load_market_config()
-        self.connect_to_market()
-        self.get_ticker_config_from_market()
         # TODO: Get Clock Signal from Executive!
         # If the above functions pass, we are ready to start consuming information
         tick_count = 0
@@ -88,11 +70,13 @@ class Account(Node):
                     continue
             except Exception as e:
                 print("Caught Exception: " + str(e))
+            time.sleep(1)
             
 if __name__ == "__main__":
-    name = "Account"
+    
     downstream_port = int(sys.argv[1])
     ticker = sys.argv[2]
+    name = "Account." + ticker
     A = Account(name, downstream_port, ticker)
     A.run()
     
