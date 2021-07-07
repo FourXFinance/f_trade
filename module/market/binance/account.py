@@ -24,10 +24,10 @@ class Account(BinanceNode):
         self.ticker = ticker
         self.add_downstream("DATA", downstream_port, zmq.PUB, bind=True, register=False)
 
-    def get_account_data(self):
+    def get_open_orders(self):
         raw_data = self.client.get_open_orders(symbol=self.ticker)
         # Do Something with Account Data?
-        pass
+        return raw_data
 
     def get_ticker_config_from_market(self):
         raw_data = self.client.get_symbol_info(symbol=self.ticker)
@@ -56,17 +56,17 @@ class Account(BinanceNode):
     def run(self):
         # TODO: Get Clock Signal from Executive!
         # If the above functions pass, we are ready to start consuming information
-        tick_count = 0
         # Accounts should wait for an algorithm to be ready. Then it will fetch new account data.
         while True:
             # data_in = self.recv...
             try:
                # Check to see if we have too many open trades or not
                 if self.open_trades >= self.max_open_trades:
-                   orders = self.client.get_open_orders(symbol=self.ticker)
+                   orders = self.get_open_orders()
                    self.open_trades = len(orders)
                 if self.open_trades >= self.max_open_trades:
                     # Sorry, nothing to do here! We have exausted the maximum number of open trades
+                    # TODO: Log Abandoned Trade
                     continue
             except Exception as e:
                 print("Caught Exception: " + str(e))

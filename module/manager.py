@@ -1,16 +1,23 @@
+from lib.controller import Controller
 import sys
 sys.path.insert(1, 'lib')
 from module import Node
 import zmq
 import json
 import time
+from enums import AcceptableKlineValues, Sleep
 
 class Manager(Node):
     def __init__(self,name, upstream_port, ticker_port_pairs) -> None:
         super().__init__(name)
-        self.add_upstream(self.name + "." + "up.proxy", upstream_port, zmq.SUB, bind=False)
-        for tpp in ticker_port_pairs:
-            self.add_downstream(self.name + "." + "down." + tpp[0], tpp[1], zmq.PUB, bind=True)
+        #TODO: Load Upstream From Config
+        #TODO: Load Ticker Starting Ports from Generated Config
+        self.ticker_controllers = {}
+        for ticker in ticker_port_pairs.keys():
+            self.ticker_controllers[ticker] = Controller()
+            for time_interval in ticker_port_pairs[ticker]:
+                #TODO: Get Interval Offset Bump
+                self.ticker_controllers[ticker].add_stream(time_interval, 4000, zmq.PUB, bind=True, register=False)
 
     def run(self):
         while True:
@@ -18,17 +25,37 @@ class Manager(Node):
             
 if __name__ == "__main__":
     name = "Manager"
-    upstream_port = int(sys.argv[1])
-    downstreams = sys.argv[2:]
-    ticker_port = []
-    if len(downstreams) %2 != 0:
-        raise Exception("Odd number of ticker port pairs given")
-    for i in range(0,len(downstreams),2):
-        ticker = downstreams[i]
-        port = downstreams[i+1]
-        ticker_port.append((ticker, int(port)))
-    M = Manager(name, upstream_port,ticker_port)
-    M.run()
+    ticker_port_map = {}
+    cur_ticker = None
+    cur_rates = []
+    # Nice Fancy way to read in command line arugments and build defualts
+    for arg in sys.argv[1:]:
+        if arg not in [item.value for item in AcceptableKlineValues]:
+            # Arg Must be a ticker
+            if cur_ticker != None:
+                # We have a ticker and arg combination
+                if cur_rates == []: 
+                    # We have a ticker with no Times specified. Use Defaults
+                    cur_rates = ["1m", "3m", "5m"] # Defaults. #TODO: Specify in config
+                ticker_port_map[cur_ticker] = cur_rates
+                cur_ticker = arg
+                cur_rates = []
+            else:
+                cur_ticker = arg
+        else:
+            # Arg Must be a Rate
+            cur_rates.append(arg)
+    else:
+        if cur_ticker != None:
+            if cur_rates == []:
+                # We have a ticker with no Times specified. Use Defaults
+                cur_rates = ["1m", "3m", "5m"] # Defaults. #TODO: Specify in config
+            ticker_port_map[cur_ticker] = cur_rates
+        
+
+print(ticker_port_map)
+    #M = Manager(name, ticker_port_map)
+    #M.run()
 
 
     
