@@ -43,7 +43,7 @@ class Controller:
     def add_stream(self, name, port, type, topic="0", bind=False, register=True):
         if name in self.streams:
             raise Exception("Controller already has stream")
-        self.streams[name] = Stream(name, port, type, topic, bind)
+        self.streams[name] = Stream(name, port, type, topic, bind)      
         if register:
             self.poller.register(self.streams[name].get_socket(), zmq.POLLIN)
     

@@ -73,7 +73,6 @@ class Account(BinanceNode):
             time.sleep(1)
             
 if __name__ == "__main__":
-    
     downstream_port = int(sys.argv[1])
     ticker = sys.argv[2]
     name = "Account." + ticker
