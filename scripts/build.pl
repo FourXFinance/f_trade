@@ -17,14 +17,39 @@ eval  {
     my $error = $@ || "Zombie Error";
     die "Error Loading System Config: $error";
 };
+my $step_count = 1;
+my $f = "%-30s%-30s\n";
 my $system_config = $config->{system};
-printf("%-30s%30s\n", "Error: " , "No System Entry Defined") and die("Startup Error")unless $system_config;
+printf("$f", "Error:" , "No System Entry Defined") and die ("Startup Error")unless $system_config;
 my $config_name = $system_config->{name};
 
-printf("%-30s%30s\n", "Warn: " , "No System Name Defined") unless $config_name;
+printf("$f", "Warn:" , "No System Name Defined") unless $config_name;
 $config_name ||= "UNDEFINED";
-printf("%-30s%30s\n", "Setting Up: " , $config_name);
+printf("$f", "System Name:" , $config_name);
+my $test_mode = $system_config->{test} // "False";
+printf("$f", "Test Mode:" , $test_mode);
 
+my $logs_enabled = $system_config->{logs} // "False";
+
+my $viewer_enabled = $system_config->{viewer} // "False";
+
+my $markets = $config->{markets};
+printf("$f", "Error:" , "No Markets Defined") and die ("Startup Error") unless $markets;
+
+
+printf("$f", "Step $step_count:" , "Checking Markets");
+$step_count+=1;
+
+my $market_config = {};
+for my $market (@$markets) {
+    my $market_name = $market->{name};
+    my $market_enabled = $market->{enabled};
+    my @temp = $market->{enabled_tick_sources};
+    print($temp[0]);
+    my $market_tick_sources = map +{$_ => 1}, $market->{enabled_tick_sources};
+    print(Dumper($market_tick_sources));
+    # Correct Way to get this Array!
+}
 # Validate Config
 
 # Create Perl Dictionaries of each object

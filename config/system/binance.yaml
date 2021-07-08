@@ -1,7 +1,7 @@
 ---
 system:
   name: F_Trader Binance
-  test: False
+  test: True
   logs: True
   version: 3
   base_market_port: 3000
@@ -17,21 +17,21 @@ system:
   logger_proxy_port: 9000
   viewer: False
   viewer_port: 11000
-market:
- - name: Binance
-   enabled: True
-   enabled_tick_sources:
-   - RT
-   - 1m
-   - 3m
-   - 5m
- - name: Alpaca
-   enabled: False
-   enabled_tick_sources:
-   - RT
-   - 1m
-   - 3m
-   - 5m
+markets:
+- name: Binance
+  enabled: True
+  enabled_tick_sources:
+  - RT
+  - 1m
+  - 3m
+  - 5m
+- name: Alpaca
+  enabled: False
+  enabled_tick_sources:
+  - RT
+  - 1m
+  - 3m
+  - 5m
 tickers:
  - name: "DOGEEUR"
    enabled: True
