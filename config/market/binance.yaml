@@ -5,53 +5,54 @@ system:
   test: False
   logs: True
   version: 3
-  algorithm_base_port: 4050
-  max_supported_algorithms_per_ticker: 10
+  base_market_port: 3000
+  base_market_offset: 100
+  base_ticker_port: 4000
+  base_ticker_offset: 100
+  max_supported_algorithms_per_ticker: 50 # 0 -> 49
+  algorithm_proxy_offset: 50
+  account_offset: 51
+  broker_port: 5000
+  trader_port: 6000
+  logger_port: 10000
+  logger_proxy_port: 9000
+  viewer: False
+  viewer_port: 11000
 market:
-  lot_size: 25
-  asset_currency: EUR
-modules:
- - name : executive
-   downstream: 
-    - port: 2000
-      bind: False
-      type: PUB
-      name: EXEC_DOWN
- - name : market
-   downstream_base_port: 3000 
+ - name: Binance
+   enabled: True
    enabled_tick_sources:
    - RT
    - 1m
    - 3m
    - 5m
-  - name: manager
-    ticker_base_port: 4000
-    ticker_offset_port: 100 #Offset
+ - name: Alpaca
+   enabled: False
+   enabled_tick_sources:
+   - RT
+   - 1m
+   - 3m
+   - 5m
 tickers:
- - name: "DOGE"
+ - name: "DOGEEUR"
    enabled: True
+   required_data: "All"
    algorithms:
-    - name: echo
+    - name: scalp
       enabled: True
- - name: "SHIB"
+      config:
+       window: 10
+       target_growth: 1.04
+ - name: "SHIBEUR"
    enabled: False
    algorithms:
     - name: echo
       enabled: True
- - name: "BTC"
-   enabled: True
-   algorithms:
-    - name: echo
+    - name: scalp
       enabled: True
- - name: "ETH"
-   enabled: True
-   algorithms:
-    - name: echo
-      enabled: True
-proxies:
- - name: log_proxy
-   upstream: 9000
-   downstream: 10000
+      config:
+       window: 5
+       target_growth: 1.03
 
     
       
