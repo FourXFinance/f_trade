@@ -57,6 +57,7 @@ class Node:
 class Algorithm(Node):
     def __init__(self, name, ticker, topic, upstream_port, downstream_port, nobind=False):
         super().__init__(name)
+        # Algorithms should have HWM set to 1!
     def load_config(self):
         try:
             with open("config/generated.json") as config:

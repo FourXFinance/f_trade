@@ -5,6 +5,8 @@ system:
   test: False
   logs: True
   version: 3
+  algorithm_base_port: 4050
+  max_supported_algorithms_per_ticker: 10
 market:
   lot_size: 25
   asset_currency: EUR
@@ -16,15 +18,15 @@ modules:
       type: PUB
       name: EXEC_DOWN
  - name : market
-   tick_module_port: 2000
-   downstream:
-    - port: 3000
-      bind: True
-   defualt_tick_sources:
+   downstream_base_port: 3000 
+   enabled_tick_sources:
    - RT
    - 1m
    - 3m
    - 5m
+  - name: manager
+    ticker_base_port: 4000
+    ticker_offset_port: 100 #Offset
 tickers:
  - name: "DOGE"
    enabled: True

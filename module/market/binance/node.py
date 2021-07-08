@@ -8,6 +8,7 @@ from datetime import datetime
 from binance import Client, ThreadedWebsocketManager, AsyncClient
 
 class BinanceNode(Node):
+    market_name = "Binance"
     def __init__(self, name) -> None:
         super().__init__(name)
         self.setup()

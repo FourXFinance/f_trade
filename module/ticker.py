@@ -14,8 +14,7 @@ class Ticker(Node):
         self.setup()
     def setup(self):
         # Add Downstreams
-        self.add_downstream("COMM", 4100 + 0, zmq.SUB, "0", bind=False, register=True)
-        self.add_downstream("DATA", self.downstream_root + 1, zmq.PUB, "0", bind=True, register=False)
+        self.add_downstream("DATA", self.downstream_root, zmq.PUB, "0", bind=True, register=False)
         # Add Upstreams ( Upstreams are on a poller)
         for i in range(0, len(self.enabled_clocks),1):
             ec  = self.enabled_clocks[i]

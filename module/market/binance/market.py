@@ -24,7 +24,14 @@ class MarketWorker(BinanceNode):
         super().__init__(name)
         self.tracked_tickers = tickers
         self.add_downstream("DATA", self.downstream_port, zmq.PUB, "0", bind=True, register=False)     
-
+    def load_config(self):
+        try:
+            with open("config/generated/" + self.market_name + "/" + self.name + ".json") as config:
+                raw_credentials = json.load(config)
+                print(raw_credentials)
+        except FileNotFoundError:
+            print("Error, config/generated/" + self.market_name + "/" + self.name + ".json cannot be found!")
+            raise FileNotFoundError
     def create_market_connection(self, test_mode = False):
         self.client  = Client(self.API_KEY, self.SECRET_KEY, testnet=test_mode)
 
