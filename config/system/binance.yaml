@@ -1,7 +1,6 @@
 ---
 system:
-  name: Binance
-  market: binance #binance.py
+  name: F_Trader Binance
   test: False
   logs: True
   version: 3
