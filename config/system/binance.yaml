@@ -33,25 +33,31 @@ markets:
   - 3m
   - 5m
 tickers:
- - name: "DOGEEUR"
-   enabled: True
-   required_data: "All"
-   algorithms:
-    - name: scalp
-      enabled: True
-      config:
-       window: 10
-       target_growth: 1.04
- - name: "SHIBEUR"
-   enabled: False
-   algorithms:
-    - name: echo
-      enabled: True
-    - name: scalp
-      enabled: True
-      config:
-       window: 5
-       target_growth: 1.03
+- name: "DOGEEUR"
+  enabled: True
+  required_data: "All"
+  algorithms:
+  - name: scalp
+    enabled: True
+    config:
+      window: 10
+      target_growth: 1.04
+- name: "SHIBEUR"
+  enabled: False
+  required_data:
+  - markets:
+    name: "Binance"
+    required_tick_sources:
+    - "1m"
+    - "5m"
+  algorithms:
+  - name: echo
+    enabled: True
+  - name: scalp
+    enabled: True
+    config:
+      window: 5
+      target_growth: 1.03
 
     
       
