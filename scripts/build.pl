@@ -11,7 +11,7 @@ if (not defined $system_name) {
 }
 my $config;
 eval  {
-    $config = LoadFile("config/$system_name.yaml");
+    $config = LoadFile("config/system/$system_name.yaml");
     1;
 } or do {
     my $error = $@ || "Zombie Error";
