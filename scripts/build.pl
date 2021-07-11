@@ -166,26 +166,41 @@ $sub_count=1;
 # Create Perl Dictionaries of each object
 
 # If Valid, Delete old configs
+qx\rm -rf ./config/generated/$system_name/\;
 qx\mkdir ./config/generated/$system_name\;
-if ($? >> 8) {
-    printf("$f", "WARN:" , "It seems an old instance of the system config exists. Deleting");
-    qx\rm -rf ./config/generated/$system_name/\;
-    qx\mkdir ./config/generated/$system_name\;
-}
+# if ($? >> 8) {
+#     printf("$f", "WARN:" , "It seems an old instance of the system config exists. Deleting");
+#     qx\rm -rf ./config/generated/$system_name/\;
+#     qx\mkdir ./config/generated/$system_name\;
+# }
 
 $step_count+=1;
 printf("$f", "Step $step_count:" , "Creating F_Trader System");
 printf("$f", "Step $step_count.$sub_count:" , "Writting Node Configs");
 
+qx\mkdir ./config/generated/$system_name/ticker/\;
 for my $module_name  (keys %$ticker_config) {
     my $module = $ticker_config->{$module_name};
-    print Dumper $module;
     my $json = encode_json $module;
-    qx\touch ./config/generated/$system_name/$module_name.json\;
-    open(FH, '>', "./config/generated/$system_name/$module_name.json") or die $!;
+    qx\touch ./config/generated/$system_name/ticker/$module_name.json\;
+    open(FH, '>', "./config/generated/$system_name/ticker/$module_name.json") or die $!;
     print FH $json;
-    close(FH)
+    close(FH);
 }
+
+qx\mkdir ./config/generated/$system_name/algorithm/\;
+for my $ticker_name  (keys %$algorithm_config) {
+    qx\mkdir ./config/generated/$system_name/algorithm/$ticker_name/\;
+    for my $algorithm_name (keys %{$algorithm_config->{$ticker_name}}) {
+        my $algorithm = $algorithm_config->{$ticker_name}->{$algorithm_name};
+        my $json = encode_json $algorithm;
+        qx\touch ./config/generated/$system_name/algorithm/$ticker_name/$algorithm_name.json\;
+        open(FH, '>', "./config/generated/$system_name/algorithm/$ticker_name/$algorithm_name.json") or die $!;
+        print FH $json;
+        close(FH);
+    }
+}
+    
 $sub_count+=1;
 # Startup Order:
 # Create Markets
