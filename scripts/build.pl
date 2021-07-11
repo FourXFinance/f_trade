@@ -93,7 +93,7 @@ for my $market (@$markets) {
     for my $tick (@$temp) { 
         push @market_tick_sources, $tick;
     }
-    $market_config->{markets}->{$market_name} = {
+    $market_config->{$market_name} = {
         name => $market_name,
         sources => \@market_tick_sources
     };
@@ -115,8 +115,8 @@ for my $ticker (@$tickers) {
     my $ticker_algorithms = $ticker->{algorithms};
     my $required_sources = {};
     if (not defined $ticker->{required_data}) {
-        foreach my $key (keys % {$market_config->{markets}}){
-            $required_sources->{$key} = $market_config->{markets}->{$key}->{sources};
+        foreach my $key (keys % {$market_config}){
+            $required_sources->{$key} = $market_config->{$key}->{sources};
         }
     } else {
         #TODO Handle Custom Tick Sources.
@@ -161,7 +161,7 @@ for my $ticker (@$tickers) {
 $sub_count=1;
 # print(Dumper($algorithm_config));
 # print(Dumper($ticker_config));
-# print(Dumper($system_config));
+# print(Dumper($market_config));
 # printf("$f", "Success:" , "System Config is Valid");
 # Create Perl Dictionaries of each object
 
@@ -177,6 +177,19 @@ qx\mkdir ./config/generated/$system_name\;
 $step_count+=1;
 printf("$f", "Step $step_count:" , "Creating F_Trader System");
 printf("$f", "Step $step_count.$sub_count:" , "Writting Node Configs");
+
+
+qx\mkdir ./config/generated/$system_name/market/\;
+for my $market_name  (keys %$market_config) {
+    my $market = $market_config->{$market_name};
+    my $json = encode_json $market;
+    qx\touch ./config/generated/$system_name/market/$market_name.json\;
+    open(FH, '>', "./config/generated/$system_name/market/$market_name.json") or die $!;
+    print FH $json;
+    close(FH);
+}
+
+
 
 qx\mkdir ./config/generated/$system_name/ticker/\;
 for my $module_name  (keys %$ticker_config) {
@@ -200,7 +213,7 @@ for my $ticker_name  (keys %$algorithm_config) {
         close(FH);
     }
 }
-    
+return;
 $sub_count+=1;
 # Startup Order:
 # Create Markets
@@ -208,7 +221,7 @@ $sub_count+=1;
 # Create Tickers
 # Add Algorithms to Tickers
 # Create Accounts
-return;
+
 # Startup each module, they will load data from configs
 
 # TODO: Check if We want to overwrite the old configs
