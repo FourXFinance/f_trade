@@ -178,7 +178,7 @@ $step_count+=1;
 printf("$f", "Step $step_count:" , "Creating F_Trader System");
 printf("$f", "Step $step_count.$sub_count:" , "Writting Node Configs");
 
-
+# Build Market Configs
 qx\mkdir ./config/generated/$system_name/market/\;
 for my $market_name  (keys %$market_config) {
     my $market = $market_config->{$market_name};
@@ -190,7 +190,7 @@ for my $market_name  (keys %$market_config) {
 }
 
 
-
+# Build Ticker Configs
 qx\mkdir ./config/generated/$system_name/ticker/\;
 for my $module_name  (keys %$ticker_config) {
     my $module = $ticker_config->{$module_name};
@@ -201,6 +201,7 @@ for my $module_name  (keys %$ticker_config) {
     close(FH);
 }
 
+# Build Algorithm Configs
 qx\mkdir ./config/generated/$system_name/algorithm/\;
 for my $ticker_name  (keys %$algorithm_config) {
     qx\mkdir ./config/generated/$system_name/algorithm/$ticker_name/\;
@@ -212,6 +213,18 @@ for my $ticker_name  (keys %$algorithm_config) {
         print FH $json;
         close(FH);
     }
+}
+
+# Build Account Configs
+
+qx\mkdir ./config/generated/$system_name/account/\;
+for my $account_name  (keys %$account_config) {
+    my $account = $account_config->{$account_name};
+    my $json = encode_json $account;
+    qx\touch ./config/generated/$system_name/account/$account_name.json\;
+    open(FH, '>', "./config/generated/$system_name/account/$account_name.json") or die $!;
+    print FH $json;
+    close(FH);
 }
 return;
 $sub_count+=1;
