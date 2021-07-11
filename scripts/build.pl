@@ -215,8 +215,18 @@ for my $ticker_name  (keys %$algorithm_config) {
     }
 }
 
-# Build Account Configs
+# Build Proxy Configs
+qx\mkdir ./config/generated/$system_name/proxy/\;
+for my $proxy_name  (keys %$proxy_config) {
+    my $proxy = $proxy_config->{$proxy_name};
+    my $json = encode_json $proxy;
+    qx\touch ./config/generated/$system_name/proxy/$proxy_name.json\;
+    open(FH, '>', "./config/generated/$system_name/proxy/$proxy_name.json") or die $!;
+    print FH $json;
+    close(FH);
+}
 
+# Build Account Configs
 qx\mkdir ./config/generated/$system_name/account/\;
 for my $account_name  (keys %$account_config) {
     my $account = $account_config->{$account_name};
