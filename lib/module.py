@@ -114,14 +114,3 @@ class Proxy(Node):
         super().__init__(name, id=id)
     def run(self):
         return super().run()
-<<<<<<< HEAD
-=======
-
-class Market(Node):
-    def __init__(self, name, id):
-        super().__init__(name, id)
-    def connect_to_market():
-        pass
-    def load_config():
-        pass
->>>>>>> main
