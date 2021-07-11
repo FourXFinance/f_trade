@@ -9,10 +9,12 @@ system:
   base_ticker_port: 4000
   base_ticker_offset: 100
   max_supported_algorithms_per_ticker: 50 # 0 -> 49
+  algorithm_offset: 1
   algorithm_proxy_offset: 50
   account_offset: 51
   broker_port: 5000
   trader_port: 6000
+  trader_enabled: False
   logger_port: 10000
   logger_proxy_port: 9000
   viewer: False
@@ -26,7 +28,7 @@ markets:
   - 3m
   - 5m
 - name: Alpaca
-  enabled: False
+  enabled: True
   enabled_tick_sources:
   - RT
   - 1m
@@ -35,15 +37,19 @@ markets:
 tickers:
 - name: "DOGEEUR"
   enabled: True
-  required_data: "All"
   algorithms:
   - name: scalp
     enabled: True
     config:
       window: 10
       target_growth: 1.04
+  - name: scalp_low
+    enabled: True
+    config:
+      window: 10
+      target_growth: 1.04
 - name: "SHIBEUR"
-  enabled: False
+  enabled: True
   required_data:
   - markets:
     name: "Binance"

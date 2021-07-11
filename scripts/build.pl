@@ -2,6 +2,7 @@
 use strict;
 use warnings;
 use YAML::XS 'LoadFile';
+use JSON;
 use Data::Dumper;
 
 my ($system_name) = lcfirst shift;
@@ -10,6 +11,12 @@ if (not defined $system_name) {
     die "System Name not provided";
 }
 my $config;
+my $system_config = {};
+my $ticker_config = {};
+my $algorithm_config = {};
+my $proxy_config = {};
+my $account_config = {};
+my $trader_config = {};
 eval  {
     $config = LoadFile("config/system/$system_name.yaml");
     1;
@@ -26,7 +33,7 @@ my $f = "%-30s%-30s\n";
 
 
 # Validate System Config
-my $system_config = $config->{system};
+$system_config= $config->{system};
 printf("$f", "Error:" , "No System Entry Defined") and die ("Startup Error")unless $system_config;
 my $config_name = $system_config->{name};
 
@@ -42,12 +49,40 @@ printf("$f", "Logs Enabled:" , $logs_enabled);
 my $viewer_enabled = $system_config->{viewer} // "False";
 printf("$f", "Viewer Enabled:" , $viewer_enabled);
 
+my $base_ticker_port = $system_config->{base_ticker_port};
+printf("$f", "Error:" , "No Base Ticker Port Defined") and die ("Startup Error") unless $base_ticker_port;
+
+my $base_ticker_offset = $system_config->{base_ticker_offset};
+printf("$f", "Error:" , "No Base Ticker Offset Defined") and die ("Startup Error") unless $base_ticker_offset;
+
+my $algorithm_offset = $system_config->{algorithm_offset};
+printf("$f", "Error:" , "No Algorithm Offset Defined") and die ("Startup Error") unless $algorithm_offset;
+
+
+my $algorithm_proxy_offset = $system_config->{algorithm_proxy_offset};
+printf("$f", "Error:" , "No Algorithm Proxy Offset Defined") and die ("Startup Error") unless $algorithm_proxy_offset;
+
+my $account_offset = $system_config->{account_offset};
+printf("$f", "Error:" , "No Account Offset Defined") and die ("Startup Error") unless $account_offset;
+
+my $broker_port = $system_config->{broker_port};
+printf("$f", "Error:" , "No Broker Port Defined") and die ("Startup Error") unless $broker_port;
+
+my $logger_port = $system_config->{logger_port};
+printf("$f", "Error:" , "No Logger Port Defined") and die ("Startup Error") unless $logger_port;
+
+
+
+printf("$f", "Base Ticker Port (Offset):" , $base_ticker_port." (".$base_ticker_offset.")");
+
+
 my $markets = $config->{markets};
 printf("$f", "Error:" , "No Markets Defined") and die ("Startup Error") unless $markets;
 
 
 printf("$f", "Step $step_count:" , "Checking Market Configurations");
-
+my $current_ticker_port = $base_ticker_port;
+my $current_algorithm_proxy_port = $base_ticker_port + $algorithm_proxy_offset;
 my $market_config = {};
 for my $market (@$markets) {
     my $market_enabled = $market->{enabled};
@@ -58,7 +93,7 @@ for my $market (@$markets) {
     for my $tick (@$temp) { 
         push @market_tick_sources, $tick;
     }
-    $market_config->{$market_name} = {
+    $market_config->{markets}->{$market_name} = {
         name => $market_name,
         sources => \@market_tick_sources
     };
@@ -71,35 +106,101 @@ $step_count+=1;
 my $tickers = $config->{tickers};
 printf("$f", "Error:" , "No Tickers Defined") and die ("Startup Error") unless $tickers;
 
-
 printf("$f", "Step $step_count:" , "Checking Ticker Configuration");
-my $ticker_config = {};
+
 for my $ticker (@$tickers) {
     my $ticker_enabled = $ticker->{enabled};
     next if $ticker_enabled eq "False";
     my $ticker_name = $ticker->{name};
     my $ticker_algorithms = $ticker->{algorithms};
+    my $required_sources = {};
+    if (not defined $ticker->{required_data}) {
+        foreach my $key (keys % {$market_config->{markets}}){
+            $required_sources->{$key} = $market_config->{markets}->{$key}->{sources};
+        }
+    } else {
+        #TODO Handle Custom Tick Sources.
+    }
+    $ticker_config->{$ticker_name} = {
+        name => $ticker_name,
+        upstream_root_port => $current_ticker_port,
+        required_sources => $required_sources,
+        algorithm_port => $current_ticker_port + $algorithm_offset,
+    };
+    my $current_algorithm_port = $current_ticker_port + 1;
+    printf("$f", "Step $step_count.$sub_count:" , "Checking Algorithm Configuration for $ticker_name");
     for my $algorithm (@$ticker_algorithms){
         my $algorithm_enabled = $algorithm->{enabled};
         next if $algorithm_enabled eq "False";
-        printf("$f", "Step $step_count.$sub_count.$sub_sub_count:" , "Checking Algorithm Configuration");
-        my $algorithms = $ticker->{algorithms};
-        printf("$f", "Error:" , "No Algorithms Defined") and die ("Startup Error") unless $algorithms;
-        $sub_sub_count+=1;
+        my $algorithm_name = $algorithm->{name};
+        my $config = $algorithm->{config};
+        if (defined $algorithm_config->{$ticker_name} and defined $algorithm_config->{$ticker_name}->{$algorithm_name}) {
+            printf("$f", "Error:" , "Algorithm $algorithm_name already defined for $ticker_name") and die ("Startup Error")
+        }
+        $algorithm_config->{$ticker_name}->{$algorithm_name} = {
+            algorithm_port => $current_ticker_port, #TODO: Figure out what to do with this?
+            algorithm_name => $algorithm_name,
+            configuration_options => $config,
+            proxy_port => $current_algorithm_proxy_port
+        };
+        $current_algorithm_port+=1;
     }
-    printf("$f", "Step $step_count  .$sub_count:" , "Ticker $ticker_name has valid Configuration");
-    $sub_sub_count = 1;
+    $proxy_config->{$ticker_name} = {
+        algorithm_proxy_port => $current_ticker_port + $algorithm_proxy_offset,
+        account_proxy_port => $current_ticker_port + $account_offset,
+    };
+    $account_config->{$ticker_name} = {
+        account_proxy_port => $current_ticker_port + $account_offset,
+        broker_port => $broker_port,
+    };
     $sub_count+=1;
+    $current_algorithm_proxy_port += $base_ticker_offset;
+    $current_ticker_port += $base_ticker_offset;
     
 }
 $sub_count=1;
-
-printf("$f", "Success:" , "System Config is Valid");
+# print(Dumper($algorithm_config));
+# print(Dumper($ticker_config));
+# print(Dumper($system_config));
+# printf("$f", "Success:" , "System Config is Valid");
 # Create Perl Dictionaries of each object
 
 # If Valid, Delete old configs
+qx\mkdir ./config/generated/$system_name\;
+if ($? >> 8) {
+    printf("$f", "WARN:" , "It seems an old instance of the system config exists. Deleting");
+    qx\rm -rf ./config/generated/$system_name/\;
+    qx\mkdir ./config/generated/$system_name\;
+}
 
+$step_count+=1;
+printf("$f", "Step $step_count:" , "Creating F_Trader System");
+printf("$f", "Step $step_count.$sub_count:" , "Writting Node Configs");
+
+for my $module_name  (keys %$ticker_config) {
+    my $module = $ticker_config->{$module_name};
+    print Dumper $module;
+    my $json = encode_json $module;
+    qx\touch ./config/generated/$system_name/$module_name.json\;
+    open(FH, '>', "./config/generated/$system_name/$module_name.json") or die $!;
+    print FH $json;
+    close(FH)
+}
+$sub_count+=1;
+# Startup Order:
+# Create Markets
+# Create 
+# Create Tickers
+# Add Algorithms to Tickers
+# Create Accounts
+return;
 # Startup each module, they will load data from configs
-sleep($node_delay);
+
+# TODO: Check if We want to overwrite the old configs
+$sub_count=1;
+$step_count+=1;
+printf("$f", "Step $step_count" , "Starting Up F_Trader System");
+
+
 #TODO: Communicate Directly With Node to get Status. Then Move onto next node
 
