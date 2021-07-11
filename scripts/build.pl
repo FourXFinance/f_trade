@@ -17,6 +17,7 @@ my $algorithm_config = {};
 my $proxy_config = {};
 my $account_config = {};
 my $trader_config = {};
+my $manager_config = {};
 eval  {
     $config = LoadFile("config/system/$system_name.yaml");
     1;
@@ -48,6 +49,12 @@ printf("$f", "Logs Enabled:" , $logs_enabled);
 
 my $viewer_enabled = $system_config->{viewer} // "False";
 printf("$f", "Viewer Enabled:" , $viewer_enabled);
+
+my $base_market_port = $system_config->{base_ticker_port};
+printf("$f", "Error:" , "No Base Market Port Defined") and die ("Startup Error") unless $base_market_port;
+
+my $base_market_offset = $system_config->{base_market_offset};
+printf("$f", "Error:" , "No Base Market Offset Defined") and die ("Startup Error") unless $base_market_offset;
 
 my $base_ticker_port = $system_config->{base_ticker_port};
 printf("$f", "Error:" , "No Base Ticker Port Defined") and die ("Startup Error") unless $base_ticker_port;
@@ -82,21 +89,29 @@ printf("$f", "Error:" , "No Markets Defined") and die ("Startup Error") unless $
 
 printf("$f", "Step $step_count:" , "Checking Market Configurations");
 my $current_ticker_port = $base_ticker_port;
+my $current_market_base = $base_market_port;
+
 my $current_algorithm_proxy_port = $base_ticker_port + $algorithm_proxy_offset;
 my $market_config = {};
 for my $market (@$markets) {
+    my $current_market_port = $current_market_base;
     my $market_enabled = $market->{enabled};
     next if $market_enabled eq "False";
     my $market_name = $market->{name};
     my $temp = $market->{enabled_tick_sources};
+    my $market_socket_bindings = {};
+
     my @market_tick_sources = ();
     for my $tick (@$temp) { 
         push @market_tick_sources, $tick;
+        $market_socket_bindings->{$tick} = $current_market_port;
+        $current_market_port +=1;
     }
     $market_config->{$market_name} = {
         name => $market_name,
-        sources => \@market_tick_sources
+        sources => $market_socket_bindings
     };
+    $current_market_base += $base_market_offset;
     printf("$f", "Step $step_count.$sub_count:" , "Market '$market_name' has valid Configuration");
     $sub_count+=1;
 }
@@ -236,6 +251,16 @@ for my $account_name  (keys %$account_config) {
     print FH $json;
     close(FH);
 }
+
+# Build Manager Configs # A BETTER WAY TO DO THIS IS TO GET THE MANAGER NODE TO READ FROM Market configs as well as ticker configs.
+# And This is exactly what I intend to do.
+# print (Dumper($market_config));
+# qx\mkdir ./config/generated/$system_name/manager/\;
+# qx\touch ./config/generated/$system_name/manager/manager.json\;
+
+
+# Generate System Config.
+# This lists all nodes and all connections they have. Essentially aggregating it all together. This provides a snapshot of the system
 return;
 $sub_count+=1;
 # Startup Order:
