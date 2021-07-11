@@ -15,7 +15,10 @@ class Node:
         self.downstream_controller = Controller()
         self.executive_controller = Controller()
         self.logging_controller = Controller()
+        self.heartbeat_controller = Controller()
+        #TODO: Add Heartbeat
         signal.signal(signal.SIGINT, self.shutdown)
+        
 
     def add_upstream(self, name, port, type, topic="0", bind=False, register=False):
         self.upstream_controller.add_stream(name, port, type, topic, bind, register)

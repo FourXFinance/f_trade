@@ -251,6 +251,10 @@ $sub_count+=1;
 $sub_count=1;
 $step_count+=1;
 printf("$f", "Step $step_count" , "Starting Up F_Trader System");
+ # How Does the system start up? Quite Simple.
+
+ # 1. Start a module
+ # 2. Ping a module for liveliness using ping.pl
 
 
 #TODO: Communicate Directly With Node to get Status. Then Move onto next node
