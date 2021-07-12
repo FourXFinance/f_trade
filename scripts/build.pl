@@ -65,7 +65,6 @@ printf("$f", "Error:" , "No Base Ticker Offset Defined") and die ("Startup Error
 my $algorithm_offset = $system_config->{algorithm_offset};
 printf("$f", "Error:" , "No Algorithm Offset Defined") and die ("Startup Error") unless $algorithm_offset;
 
-
 my $algorithm_proxy_offset = $system_config->{algorithm_proxy_offset};
 printf("$f", "Error:" , "No Algorithm Proxy Offset Defined") and die ("Startup Error") unless $algorithm_proxy_offset;
 
@@ -77,8 +76,6 @@ printf("$f", "Error:" , "No Broker Port Defined") and die ("Startup Error") unle
 
 my $logger_port = $system_config->{logger_port};
 printf("$f", "Error:" , "No Logger Port Defined") and die ("Startup Error") unless $logger_port;
-
-
 
 printf("$f", "Base Ticker Port (Offset):" , $base_ticker_port." (".$base_ticker_offset.")");
 
@@ -176,7 +173,7 @@ for my $ticker (@$tickers) {
 $sub_count=1;
 # print(Dumper($algorithm_config));
 # print(Dumper($ticker_config));
-# print(Dumper($market_config));
+print(Dumper($market_config));
 # printf("$f", "Success:" , "System Config is Valid");
 # Create Perl Dictionaries of each object
 

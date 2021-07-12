@@ -10,7 +10,7 @@ class Stream:
     def __init__(self, name, port, type, topic="0", bind=False) -> None:
         self.context = zmq.Context()
         self.name = name
-        self.port = port
+        self.port = int(port)
         self.topic = int(topic)
         self.type = type
         self.bind = bind
@@ -40,7 +40,7 @@ class Controller:
         self.poller = zmq.Poller()
         self.PTIMEOUT = POLLER_TIMEOUT
     
-    def add_stream(self, name, port, type, topic="0", bind=False, register=True):
+    def add_stream(self, name, port, type, topic="0", bind=False, register=False):
         if name in self.streams:
             raise Exception("Controller already has stream")
         self.streams[name] = Stream(name, port, type, topic, bind)      
@@ -74,9 +74,9 @@ class Controller:
         message = r.get_stream().recv()
         return message
 
-    def recv_from(self, target_stream, message):
+    def recv_from(self, target_stream):
         r = self.streams[target_stream]
-        message = r.recv()
+        message = r.get_socket().recv()
         return message
 
     def recv_snapshot(self, timeout=POLLER_TIMEOUT):              

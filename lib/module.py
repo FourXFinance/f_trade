@@ -8,7 +8,8 @@ from enums import AcceptableKlineValues
 
 class Node:
     enabled = False
-    def __init__(self, name, id=None):
+    def __init__(self, system_name, name, id=None):
+        self.system_name = system_name
         self.context = zmq.Context()
         self.name = name
         self.upstream_controller = Controller()
@@ -35,6 +36,9 @@ class Node:
     def recv(self):
         return self.upstream_controller.recv()
 
+    def recv_from(self,stream_name):
+        return self.upstream_controller.recv_from(stream_name)
+
     def send_to(self, stream_name, message):
         #TODO: Iterate through all controllers to find target stream
         return self.downstream_controller.send_to(stream_name, message)
@@ -54,48 +58,39 @@ class Node:
     def shutdown(self, sig, frame):
         print("Safe Shutdown Process")
         sys.exit(0)
-    def heartbeat():
+
+    def heartbeat(self):
+        # TODO: Handle Heartbeat with Callbacks! - Coming Soon!!!
+        return "Beep!"
         pass
 
 class Algorithm(Node):
-    def __init__(self, name, ticker, topic, upstream_port, downstream_port, nobind=False):
-        super().__init__(name)
+    def __init__(self, system_name, ticker):
+        self.ticker = ticker
+        super().__init__(system_name, self.name)
         # Algorithms should have HWM set to 1!
     def load_config(self):
         try:
-            with open("config/generated.json") as config:
-                raw_config = json.load(config)
+            with open("config/generated/" + self.system_name + "/algorithm/" + self.ticker + "/" + self.name + ".json") as config:
+                self.config_raw = json.load(config)
+                self.configuration_options = self.config_raw["configuration_options"]
+                print(self.configuration_options)
         except FileNotFoundError:
             print("Algorithm Config Is Missing!")
         pass
-    def add_data_clock(self, port, name):
-        self.data_controller.add_stream(name, port, type=zmq.SUB)
-
-    def remove_data_clock(self, name):
-        # TODO: Close the connection properly.
-        pass
-
-    def recv_config_data(self):
-        pass
-
-    def recv_ready_signal(self):
-        pass
-
-    def recv_all_data(self):
-        pass
-
-    def recv_data(self, clock=AcceptableKlineValues.KLINE_INTERVAL_RT):
-        # Pull it from the correct data port
-        pass
-
-    def reload_config(self):
-        # self.clean()
-        # self.disable
+    def setup(self):
         self.load_config()
-        # self.enable
-    def setup():
-        raise Exception("Override Me!")
+        self.configure()
 
+    def configure(self):
+        self.upstream_controller.add_stream("DATA", 
+            self.config_raw["algorithm_port"], 
+            zmq.SUB)
+
+        self.downstream_controller.add_stream("PROXY", 
+            self.config_raw["proxy_port"], 
+            zmq.PUB)
+        
     def run():
         raise Exception("Override Me!")
 

@@ -18,7 +18,7 @@ system:
   logger_port: 10000
   logger_proxy_port: 9000
   viewer: False
-  viewer_port: 11000
+  viewer_port: 11000s
 markets:
 - name: Binance
   enabled: True
