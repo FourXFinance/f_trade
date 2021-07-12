@@ -31,13 +31,38 @@ class Manager(Node):
             with open(os.path.join(os.getcwd()+ "/config/generated/" + self.system_name + "/ticker/"  + filename), 'r') as config:
                 raw_config = json.load(config)
                 self.ticker_configs[raw_config["name"]] = raw_config
-
         print(self.market_configs)
         print(self.ticker_configs)
-
+    def setup_upstream(self):
+        for market in self.market_configs.keys():
+            # TODO: Extra Level of Abstraction for Collection of Controllers
+            for interval in self.market_configs[market]["sources"].keys():
+                port = self.market_configs[market]["sources"][interval]
+                self.upstream_controller.add_stream( 
+                    market + "." + interval,
+                    port,
+                    zmq.SUB,
+                    bind=False,
+                    register=True
+                )                    
+    def setup_downstream(self):
+        for ticker in self.ticker_configs.keys():
+            # TODO: Extra Level of Abstraction for Collection of Controllers
+            for market in self.ticker_configs[ticker]["required_sources"].keys():
+                for source in self.ticker_configs[ticker]["required_sources"][market].keys():
+                    port = self.ticker_configs[ticker]["required_sources"][market][source]
+                    self.downstream_controller.add_stream( 
+                        ticker + "." + source,
+                        port,
+                        zmq.PUB,
+                        bind=True,
+                        register=True
+                    )
     def setup(self):
         self.load_configs()
-        pass
+        self.setup_upstream()
+        self.setup_downstream()
+        
 
     def run(self):
         while True:

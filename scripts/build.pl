@@ -51,7 +51,7 @@ printf("$f", "Logs Enabled:" , $logs_enabled);
 my $viewer_enabled = $system_config->{viewer} // "False";
 printf("$f", "Viewer Enabled:" , $viewer_enabled);
 
-my $base_market_port = $system_config->{base_ticker_port};
+my $base_market_port = $system_config->{base_market_port};
 printf("$f", "Error:" , "No Base Market Port Defined") and die ("Startup Error") unless $base_market_port;
 
 my $base_market_offset = $system_config->{base_market_offset};
@@ -88,7 +88,7 @@ printf("$f", "Error:" , "No Markets Defined") and die ("Startup Error") unless $
 printf("$f", "Step $step_count:" , "Checking Market Configurations");
 my $current_ticker_port = $base_ticker_port;
 my $current_market_base = $base_market_port;
-
+print($base_market_port);
 my $current_algorithm_proxy_port = $base_ticker_port + $algorithm_proxy_offset;
 my $market_config = {};
 for my $market (@$markets) {
@@ -120,7 +120,6 @@ my $tickers = $config->{tickers};
 printf("$f", "Error:" , "No Tickers Defined") and die ("Startup Error") unless $tickers;
 
 printf("$f", "Step $step_count:" , "Checking Ticker Configuration");
-print(Dumper($market_config));
 my $ticker_count = 0;
 for my $ticker (@$tickers) {
     my $ticker_enabled = $ticker->{enabled};
@@ -133,7 +132,8 @@ for my $ticker (@$tickers) {
             $required_sources->{$key} = dclone $market_config->{$key}->{sources};
             foreach(keys %{$required_sources->{$key}}) {
                 # print($base_ticker_offset * $ticker_count);
-                $required_sources->{$key}->{$_} += ($base_ticker_offset * $ticker_count);
+                # This can 100% be done better
+                $required_sources->{$key}->{$_} += ($base_ticker_port - $base_market_port) + ($base_ticker_offset * $ticker_count);
             }
         }
     } else {
@@ -180,7 +180,7 @@ for my $ticker (@$tickers) {
 $sub_count=1;
 # print(Dumper($algorithm_config));
 # print(Dumper($ticker_config));
-print(Dumper($market_config));
+# print(Dumper($market_config));
 # printf("$f", "Success:" , "System Config is Valid");
 # Create Perl Dictionaries of each object
 

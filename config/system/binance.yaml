@@ -28,7 +28,7 @@ markets:
   - 3m
   - 5m
 - name: Alpaca
-  enabled: True
+  enabled: False
   enabled_tick_sources:
   - RT
   - 1m
@@ -50,12 +50,6 @@ tickers:
       target_growth: 1.04
 - name: "SHIBEUR"
   enabled: True
-  required_data:
-  - markets:
-    name: "Binance"
-    required_tick_sources:
-    - "1m"
-    - "5m"
   algorithms:
   - name: echo
     enabled: True
