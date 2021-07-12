@@ -5,6 +5,7 @@ use YAML::XS 'LoadFile';
 use JSON;
 use Data::Dumper;
 
+use Storable 'dclone';
 my ($system_name) = lcfirst shift;
 
 if (not defined $system_name) {
@@ -119,7 +120,8 @@ my $tickers = $config->{tickers};
 printf("$f", "Error:" , "No Tickers Defined") and die ("Startup Error") unless $tickers;
 
 printf("$f", "Step $step_count:" , "Checking Ticker Configuration");
-
+print(Dumper($market_config));
+my $ticker_count = 0;
 for my $ticker (@$tickers) {
     my $ticker_enabled = $ticker->{enabled};
     next if $ticker_enabled eq "False";
@@ -128,11 +130,16 @@ for my $ticker (@$tickers) {
     my $required_sources = {};
     if (not defined $ticker->{required_data}) {
         foreach my $key (keys % {$market_config}){
-            $required_sources->{$key} = $market_config->{$key}->{sources};
+            $required_sources->{$key} = dclone $market_config->{$key}->{sources};
+            foreach(keys %{$required_sources->{$key}}) {
+                # print($base_ticker_offset * $ticker_count);
+                $required_sources->{$key}->{$_} += ($base_ticker_offset * $ticker_count);
+            }
         }
     } else {
         #TODO Handle Custom Tick Sources.
     }
+    #print(Dumper($required_sources)."\n");
     $ticker_config->{$ticker_name} = {
         name => $ticker_name,
         upstream_root_port => $current_ticker_port,
@@ -168,7 +175,7 @@ for my $ticker (@$tickers) {
     $sub_count+=1;
     $current_algorithm_proxy_port += $base_ticker_offset;
     $current_ticker_port += $base_ticker_offset;
-    
+    $ticker_count +=1;
 }
 $sub_count=1;
 # print(Dumper($algorithm_config));
