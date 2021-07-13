@@ -4,7 +4,6 @@ use warnings;
 use YAML::XS 'LoadFile';
 use JSON;
 use Data::Dumper;
-
 use Storable 'dclone';
 my ($system_name) = lcfirst shift;
 
@@ -88,14 +87,13 @@ printf("$f", "Error:" , "No Markets Defined") and die ("Startup Error") unless $
 printf("$f", "Step $step_count:" , "Checking Market Configurations");
 my $current_ticker_port = $base_ticker_port;
 my $current_market_base = $base_market_port;
-print($base_market_port);
 my $current_algorithm_proxy_port = $base_ticker_port + $algorithm_proxy_offset;
 my $market_config = {};
 for my $market (@$markets) {
     my $current_market_port = $current_market_base;
     my $market_enabled = $market->{enabled};
     next if $market_enabled eq "False";
-    my $market_name = $market->{name};
+    my $market_name = lc $market->{name};
     my $temp = $market->{enabled_tick_sources};
     my $market_socket_bindings = {};
 
@@ -107,7 +105,8 @@ for my $market (@$markets) {
     }
     $market_config->{$market_name} = {
         name => $market_name,
-        sources => $market_socket_bindings
+        sources => $market_socket_bindings,
+        tracked_tickers => []
     };
     $current_market_base += $base_market_offset;
     printf("$f", "Step $step_count.$sub_count:" , "Market '$market_name' has valid Configuration");
@@ -146,6 +145,8 @@ for my $ticker (@$tickers) {
         required_sources => $required_sources,
         algorithm_port => $current_ticker_port + $algorithm_offset,
     };
+    #TODO: Handle Different Markets with Different Tickers
+    push @{$market_config->{'binance'}->{tracked_tickers}}, $ticker_name;
     my $current_algorithm_port = $current_ticker_port + 1;
     printf("$f", "Step $step_count.$sub_count:" , "Checking Algorithm Configuration for $ticker_name");
     for my $algorithm (@$ticker_algorithms){
@@ -265,7 +266,6 @@ for my $account_name  (keys %$account_config) {
 
 # Generate System Config.
 # This lists all nodes and all connections they have. Essentially aggregating it all together. This provides a snapshot of the system
-return;
 $sub_count+=1;
 # Startup Order:
 # Create Markets
@@ -285,6 +285,7 @@ printf("$f", "Step $step_count" , "Starting Up F_Trader System");
  # 1. Start a module
  # 2. Ping a module for liveliness using ping.pl
 
+# Start Markets
 
 #TODO: Communicate Directly With Node to get Status. Then Move onto next node
 

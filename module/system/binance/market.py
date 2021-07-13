@@ -17,21 +17,29 @@ import asyncio
 # This is a tick Node. You will run one of these for every time interval
 
 class MarketWorker(BinanceNode):
-    def __init__(self, name, downstream_port, interval, tickers,id=None) -> None:
-        self.interval = interval
-        self.downstream_port = downstream_port
-        self.tickers = tickers
-        super().__init__(name)
-        self.tracked_tickers = tickers
-        self.add_downstream("DATA", self.downstream_port, zmq.PUB, "0", bind=True, register=False)     
+    def __init__(self, system_name, market_name) -> None:
+        self.name = "Market"
+        self.market_name = market_name
+        self.system_name = system_name
+        super().__init__(system_name, self.name)
+        self.setup()
+
+    def setup(self):
+        self.load_config()
+        self.setup_downstream()
+
     def load_config(self):
         try:
-            with open("config/generated/" + self.market_name + "/" + self.name + ".json") as config:
+            with open("config/generated/" + self.system_name + "/market/" + self.market_name + ".json") as config:
                 raw_credentials = json.load(config)
                 print(raw_credentials)
         except FileNotFoundError:
-            print("Error, config/generated/" + self.market_name + "/" + self.name + ".json cannot be found!")
+            print("config/generated/" + self.system_name + "/market/" + self.market_name + ".json")
             raise FileNotFoundError
+
+    def setup_downstream(self):
+        pass
+
     def create_market_connection(self, test_mode = False):
         self.client  = Client(self.API_KEY, self.SECRET_KEY, testnet=test_mode)
 
@@ -79,25 +87,14 @@ class MarketWorker(BinanceNode):
     async def run(self):
         tick_count = 0
         while True:
-            tick_count+=1
-            now = datetime.now()
-            try:
-                await self.get_new_data()
-            except Exception as e:
-                print("Caught Exception: " + str(e))
-            later = datetime.now()
-            difference = (later - now).total_seconds()
-            # print(str(tick_count) + " Took " + str(round(difference,3))  + " seconds")
-            time.sleep(get_sleep_unit_for_interval(self.interval))
+            time.sleep(1)
 
 if __name__ == "__main__":
-    name = "market"
-    downstream = int(sys.argv[1])
-    interval = sys.argv[2]
-    if interval not in [item.value for item in AcceptableKlineValues]:
-        raise Exception("Error Unknown Time Interval: " + interval)
-    tickers = sys.argv[3:]
-    MW = MarketWorker("binance" + "." + name + "." + interval, downstream , interval, tickers)
+    # interval = sys.argv[2]
+    # if interval not in [item.value for item in AcceptableKlineValues]:
+    #     raise Exception("Error Unknown Time Interval: " + interval)
+    # tickers = sys.argv[3:]
+    MW = MarketWorker(sys.argv[1], sys.argv[2])
     loop = asyncio.get_event_loop()
     loop.run_until_complete(MW.run())
 

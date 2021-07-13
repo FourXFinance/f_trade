@@ -9,25 +9,8 @@ from binance import Client, ThreadedWebsocketManager, AsyncClient
 
 class BinanceNode(Node):
     market_name = "Binance"
-    def __init__(self, name) -> None:
-        super().__init__(name)
-        self.setup()
-    def setup(self):
-        self.load_market_config()
-        self.create_market_connection()
-        self.is_market_open()
-        self.load_market_config()
-        
-        
-    def load_market_config(self): 
-        try:
-            with open("config/secrets/binance.json") as user_credentials:
-                raw_credentials = json.load(user_credentials)
-                self.API_KEY = raw_credentials["API_KEY"]
-                self.SECRET_KEY = raw_credentials["SECRET_KEY"]
-        except FileNotFoundError:
-            print("Error, config/secrets/binance.json file not found")
-            raise FileNotFoundError
+    def __init__(self, system_name,name) -> None:
+        super().__init__(system_name, name)
 
     def create_market_connection(self, test_mode = False):
         self.client  = Client(self.API_KEY, self.SECRET_KEY, testnet=test_mode)

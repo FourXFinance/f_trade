@@ -17,7 +17,13 @@ class Manager(Node):
         self.setup()
         #TODO: Load Upstream From Config
         #TODO: Load Ticker Starting Ports from Generated Config
-    
+        
+    def setup(self):
+        self.load_configs()
+        self.setup_upstream()
+        self.setup_downstream()
+        #TODO Map Bindings of Ticker to Port.
+
     def load_configs(self):
         # Manager Node needs two configs to work: Traders and Market
 
@@ -28,7 +34,7 @@ class Manager(Node):
                 self.market_configs[raw_config["name"]] = raw_config
         # Load Ticker Configs
         for filename in os.listdir(os.getcwd() + "/config/generated/" + self.system_name + "/ticker"):
-            with open(os.path.join(os.getcwd()+ "/config/generated/" + self.system_name + "/ticker/"  + filename), 'r') as config:
+            with open(os.path.join(os.getcwd() + "/config/generated/" + self.system_name + "/ticker/"  + filename), 'r') as config:
                 raw_config = json.load(config)
                 self.ticker_configs[raw_config["name"]] = raw_config
         print(self.market_configs)
@@ -58,11 +64,6 @@ class Manager(Node):
                         bind=True,
                         register=True
                     )
-    def setup(self):
-        self.load_configs()
-        self.setup_upstream()
-        self.setup_downstream()
-        
 
     def run(self):
         while True:

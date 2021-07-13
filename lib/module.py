@@ -62,7 +62,7 @@ class Node:
     def heartbeat(self):
         # TODO: Handle Heartbeat with Callbacks! - Coming Soon!!!
         return "Beep!"
-        pass
+
 
 class Algorithm(Node):
     def __init__(self, system_name, ticker):
@@ -77,7 +77,7 @@ class Algorithm(Node):
                 print(self.configuration_options)
         except FileNotFoundError:
             print("Algorithm Config Is Missing!")
-        pass
+
     def setup(self):
         self.load_config()
         self.configure()
