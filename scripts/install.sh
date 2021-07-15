@@ -67,7 +67,7 @@ do
         tput setaf 1;
         echo "(Perl) $i is not installed. Installing from CPAN"
         tput setaf 3;
-        cpanm --notest $i
+        cpanm --notest $i # Test if you have time.
     fi
 done
 # Setup required python Libs

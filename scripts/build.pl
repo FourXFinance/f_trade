@@ -5,6 +5,7 @@ use YAML::XS 'LoadFile';
 use JSON;
 use Data::Dumper;
 use Storable 'dclone';
+die "System Name not provded" unless @ARGV;
 my ($system_name) = lcfirst shift;
 
 if (not defined $system_name) {
@@ -120,6 +121,7 @@ printf("$f", "Error:" , "No Tickers Defined") and die ("Startup Error") unless $
 
 printf("$f", "Step $step_count:" , "Checking Ticker Configuration");
 my $ticker_count = 0;
+my $topic = 0;
 for my $ticker (@$tickers) {
     my $ticker_enabled = $ticker->{enabled};
     next if $ticker_enabled eq "False";
@@ -146,7 +148,8 @@ for my $ticker (@$tickers) {
         algorithm_port => $current_ticker_port + $algorithm_offset,
     };
     #TODO: Handle Different Markets with Different Tickers
-    push @{$market_config->{'binance'}->{tracked_tickers}}, $ticker_name;
+    push @{$market_config->{'binance'}->{tracked_tickers}}, {$ticker_name => $topic};
+    $topic+=1;
     my $current_algorithm_port = $current_ticker_port + 1;
     printf("$f", "Step $step_count.$sub_count:" , "Checking Algorithm Configuration for $ticker_name");
     for my $algorithm (@$ticker_algorithms){
