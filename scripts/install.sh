@@ -1,6 +1,6 @@
 #!/bin/bash
 
-declare -a system_apps=("git" "perl" "perl-doc" "python3-pip")
+declare -a system_apps=("git" "perl" "perl-doc" "python3-pip") 
 
 for i in "${system_apps[@]}"
     do
@@ -36,10 +36,8 @@ for i in "${system_libs[@]}"
     fi
 done
 
-
-# Setup required Perl Libs. I am sure there is a better way to do this.
-declare -a perl_cpan_libs=("JSON" "ZMQ::FFI" "YAML::XS")
-
+# Setup required Perl Libs.  Part 1 - cpan TODO: Figure out how to work with cpanm instead of cpan
+declare -a perl_cpan_libs=("App:cpanminus")
 for i in "${perl_cpan_libs[@]}"
 do
     perldoc -l $i > /dev/null 2>&1
@@ -48,8 +46,28 @@ do
         tput setaf 2;
         echo "(Perl) $i is Installed"
     else
+        tput setaf 1;
         echo "(Perl) $i is not installed. Installing from CPAN"
+        tput setaf 3;
         cpan $i
+    fi
+done
+
+# Setup required Perl Libs. Part 2 - cpanm
+declare -a perl_cpanm_libs=( "JSON" "ZMQ::FFI" "YAML::XS" "TryCatch")
+
+for i in "${perl_cpanm_libs[@]}"
+do
+    perldoc -l $i > /dev/null 2>&1
+    if [ $? = 0 ]
+    then
+        tput setaf 2;
+        echo "(Perl) $i is Installed"
+    else
+        tput setaf 1;
+        echo "(Perl) $i is not installed. Installing from CPAN"
+        tput setaf 3;
+        cpanm --notest $i
     fi
 done
 # Setup required python Libs
