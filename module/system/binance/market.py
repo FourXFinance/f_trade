@@ -109,8 +109,9 @@ class MarketWorker(BinanceNode):
         tick_count = 0
         await self.create_market_connection()
         while True:
+            # TODO: Make This an Event Loop!!!!
             await self.get_new_data()
-            time.sleep(1)
+            time.sleep(get_sleep_unit_for_interval(self.interval))
 
 if __name__ == "__main__":
     interval = sys.argv[3]
