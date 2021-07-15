@@ -18,7 +18,7 @@ class Stream:
         self.setup_stream()
 
     def setup_stream(self):
-        self.socket = self.context.socket(self.type)        
+        self.socket = self.context.socket(self.type)
         if self.bind:
             self.socket.bind("tcp://*:%d" % self.port)
             # self.socket.set_hwm(1)
@@ -81,6 +81,6 @@ class Controller:
 
     def recv_snapshot(self, timeout=POLLER_TIMEOUT):              
         streams = dict(self.poller.poll(timeout))
-        for stream in streams:
-            yield stream # Should check on the performance of this.
-        return None
+        #for stream in streams:
+            #yield stream # Should check on the performance of this.
+        return streams

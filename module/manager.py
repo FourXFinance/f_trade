@@ -14,6 +14,7 @@ class Manager(Node):
         super().__init__(system_name, self.name)
         self.market_configs = {}
         self.ticker_configs = {}
+        self.tickers_with_topic = {}
         self.setup()
         #TODO: Load Upstream From Config
         #TODO: Load Ticker Starting Ports from Generated Config
@@ -32,6 +33,10 @@ class Manager(Node):
             with open(os.path.join(os.getcwd()+ "/config/generated/" + self.system_name + "/market/"  + filename), 'r') as config:
                 raw_config = json.load(config)
                 self.market_configs[raw_config["name"]] = raw_config
+                self.mappings = raw_config["tracked_tickers"]
+                for mapping in self.mappings:
+                    self.tickers_with_topic.update(mapping)
+                print(self.tickers_with_topic)
         # Load Ticker Configs
         for filename in os.listdir(os.getcwd() + "/config/generated/" + self.system_name + "/ticker"):
             with open(os.path.join(os.getcwd() + "/config/generated/" + self.system_name + "/ticker/"  + filename), 'r') as config:
@@ -44,8 +49,11 @@ class Manager(Node):
             # TODO: Extra Level of Abstraction for Collection of Controllers
             for interval in self.market_configs[market]["sources"].keys():
                 port = self.market_configs[market]["sources"][interval]
+                print(port)
+                #TODO: Multimarket support
+                #TODO: Multiticker supports
                 self.upstream_controller.add_stream( 
-                    market + "." + interval,
+                    interval,
                     port,
                     zmq.SUB,
                     bind=False,
@@ -62,11 +70,29 @@ class Manager(Node):
                         port,
                         zmq.PUB,
                         bind=True,
-                        register=True
+                        register=False
                     )
 
     def run(self):
         while True:
+            #TODO: Event Loop
+            all_streams = self.upstream_controller.get_streams()
+            #print(all_streams)
+            stream_socket_map = {}
+            for stream in all_streams.keys():
+                #print(all_streams[stream])
+                #print(all_streams[stream].name)
+               stream_socket_map[all_streams[stream].get_socket()] = all_streams[stream].name
+            print(stream_socket_map)
+            for stream in self.upstream_controller.recv_snapshot():
+                #We have a dictionary of streams. Which one do we have
+                print (stream_socket_map[stream]) # Yes we are using an object hash as a key!
+                # From here we can figure out what Upstream We have!
+
+            
+            #print("Getting Message")
+            #message = self.upstream_controller.recv_from("5m")
+            #print(message)
             time.sleep(1)
             
 if __name__ == "__main__":
