@@ -31,8 +31,8 @@ class Stream:
     def get_socket(self):
         return self.socket
 
-    def send(self, message):
-        self.socket.send(message)
+    def send(self, message, topic="0"):
+        self.socket.send_string("%s %s" % (topic, message))
 
 class Controller:
     def __init__(self) -> None:
@@ -64,7 +64,7 @@ class Controller:
         s.send(message.encode('utf-8'))
         return True
 
-    def send_to(self, target_stream, message):
+    def send_to(self, target_stream, message, topic="0"):
         s = self.streams[target_stream]
         s.send(message.encode('utf-8'))
         return True

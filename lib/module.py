@@ -39,9 +39,9 @@ class Node:
     def recv_from(self,stream_name):
         return self.upstream_controller.recv_from(stream_name)
 
-    def send_to(self, stream_name, message):
+    def send_to(self, stream_name, message, topic="0"):
         #TODO: Iterate through all controllers to find target stream
-        return self.downstream_controller.send_to(stream_name, message)
+        return self.downstream_controller.send_to(stream_name, message, topic)
 
     def consume_next(self):
         return self.upstream_controller.consume_next()
