@@ -173,11 +173,11 @@ for my $ticker (@$tickers) {
         # $current_algorithm_port+=1;
     }
     $proxy_config->{$ticker_name} = {
-        algorithm_proxy_port => $current_ticker_port + $algorithm_proxy_offset,
-        account_proxy_port => $current_ticker_port + $account_offset,
+        algorithm_proxy_port => $current_algorithm_port + $algorithm_proxy_offset,
+        account_proxy_port => $current_algorithm_port + $account_offset,
     };
     $account_config->{$ticker_name} = {
-        account_proxy_port => $current_ticker_port + $account_offset,
+        account_proxy_port => $current_algorithm_port + $account_offset,
         broker_port => $broker_port,
     };
     $sub_count+=1;
