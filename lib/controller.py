@@ -3,6 +3,7 @@ from time import time
 sys.path.insert(1, 'lib')
 from constants import POLLER_TIMEOUT
 from os import name
+
 import zmq
 
 # A Stream is a ZMQ socket
@@ -25,6 +26,7 @@ class Stream:
         else:
             self.socket.connect("tcp://localhost:%d" % self.port)
             if self.type == zmq.SUB:
+                print("Port Topic:" + str(self.port) + "\t" + str(self.topic))
                 self.socket.setsockopt_string(zmq.SUBSCRIBE, str(self.topic))
                 # self.socket.set_hwm(1)
 
@@ -61,12 +63,12 @@ class Controller:
 
     def send(self, message):
         s = self.streams[list(self.streams.keys())[0]]
-        s.send(message.encode('utf-8'))
+        s.send(message)
         return True
 
     def send_to(self, target_stream, message, topic="0"):
         s = self.streams[target_stream]
-        s.send(message.encode('utf-8'))
+        s.send(message, topic=topic)
         return True
 
     def recv(self):

@@ -74,12 +74,13 @@ class MarketWorker(BinanceNode):
         raw_data = None
         try:
             raw_data = await self.client.get_klines(symbol=ticker_name, interval=self.interval)
-            print(raw_data)
+            # print(raw_data)
         except Exception as e:
             print(e)
         recent_trades =  np.array(raw_data)
         df = pd.DataFrame(data=recent_trades)
-        print(df.to_json())
+        #print(df.to_json())
+        print(ticker_name + "\t" + str(self.tickers_with_topic[ticker_name]))
         self.send_to(self.interval, df.to_json(), topic=self.tickers_with_topic[ticker_name])
     
     async def get_last_trades(self, ticker_name, limit=50):
@@ -88,12 +89,14 @@ class MarketWorker(BinanceNode):
             raw_data = await self.client.get_recent_trades(symbol=ticker_name, limit=limit)
         except Exception as e:
             print(e)
-        recent_trades =  np.array(raw_data)
+        recent_trades = np.array(raw_data)
         df = pd.DataFrame(data=recent_trades)
-        print(df.to_json())
+        #print(df.to_json())
+        print(ticker_name + "\t" + str(self.tickers_with_topic[ticker_name]))
         self.send_to(self.interval, df.to_json(), topic=self.tickers_with_topic[ticker_name])
 
     async def get_data_for_ticker(self, ticker):
+        
         if self.interval == 'RT':
             await self.get_last_trades(ticker)
         else:
@@ -103,7 +106,7 @@ class MarketWorker(BinanceNode):
       
         # res = await asyncio.gather(self.get_market_data_for_ticker(ticker[0], ticker[1]) for ticker in tickers)
         # TODO: This should accomodate as many tickers as supplied.
-        print("Test")
+        #print("Test")
         await asyncio.gather(* [self.get_data_for_ticker(ticker) for ticker in self.tickers])
     async def run(self):
         tick_count = 0

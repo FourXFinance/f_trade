@@ -4,6 +4,8 @@ from module import Node
 import zmq
 import json
 import time
+import pandas as pd
+from ast import literal_eval
 from enums import AcceptableKlineValues, Sleep
 import os
 
@@ -44,21 +46,26 @@ class Manager(Node):
                 self.ticker_configs[raw_config["name"]] = raw_config
         print(self.market_configs)
         print(self.ticker_configs)
+
     def setup_upstream(self):
         for market in self.market_configs.keys():
             # TODO: Extra Level of Abstraction for Collection of Controllers
             for interval in self.market_configs[market]["sources"].keys():
                 port = self.market_configs[market]["sources"][interval]
                 print(port)
-                #TODO: Multimarket support
+                #TODO: Multimarket support 
                 #TODO: Multiticker supports
-                self.upstream_controller.add_stream( 
-                    interval,
-                    port,
-                    zmq.SUB,
-                    bind=False,
-                    register=True
-                )                    
+                for ticker in self.tickers_with_topic.keys():
+                    topic = self.tickers_with_topic[ticker]
+                    print(topic)
+                    self.upstream_controller.add_stream( 
+                        interval + "." + ticker,
+                        port,
+                        zmq.SUB,
+                        topic=topic,
+                        bind=False,
+                        register=True
+                    )                    
     def setup_downstream(self):
         for ticker in self.ticker_configs.keys():
             # TODO: Extra Level of Abstraction for Collection of Controllers
@@ -68,7 +75,7 @@ class Manager(Node):
                     self.downstream_controller.add_stream( 
                         ticker + "." + source,
                         port,
-                        zmq.PUB,
+                        zmq.PUB,    
                         bind=True,
                         register=False
                     )
@@ -76,20 +83,31 @@ class Manager(Node):
     def run(self):
         while True:
             #TODO: Event Loop
-            all_streams = self.upstream_controller.get_streams()
+            upstreams = self.upstream_controller.get_streams()
+            downstreams = self.downstream_controller.get_streams()
             #print(all_streams)
             stream_socket_map = {}
-            for stream in all_streams.keys():
+            for stream in upstreams.keys():
                 #print(all_streams[stream])
                 #print(all_streams[stream].name)
-               stream_socket_map[all_streams[stream].get_socket()] = all_streams[stream].name
-            print(stream_socket_map)
+               stream_socket_map[upstreams[stream].get_socket()] = upstreams[stream].name
+
+            #print(stream_socket_map)
+            #print(len(self.upstream_controller.recv_snapshot().keys()))
             for stream in self.upstream_controller.recv_snapshot():
                 #We have a dictionary of streams. Which one do we have
-                print (stream_socket_map[stream]) # Yes we are using an object hash as a key!
+                print () # Yes we are using an object hash as a key!
+                input_stream = stream_socket_map[stream]
+                raw_data = stream.recv().decode('UTF-8')
+                data = {'topic': raw_data[:1], 'message':raw_data[1:]}
+                message = pd.read_json(data["message"])
+                #print(data["message"])
+                #print(pd.read_json(data["message"]))
                 # From here we can figure out what Upstream We have!
-
-            
+                # Once we know that we can figure out what downstream(s) We need to send the data to!
+                # It might be good at this point to add data from where it came...
+            #TODO: Build Mappings of Ticker+Interval => Port
+            #TODO: Map Input to Output
             #print("Getting Message")
             #message = self.upstream_controller.recv_from("5m")
             #print(message)
