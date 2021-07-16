@@ -107,7 +107,7 @@ class Manager(Node):
                 message = pd.read_json(data["message"])
                 print(input_stream)
                 print(self.downstream_controller.get_stream(input_stream).port)
-                self.downstream_controller.send_to(input_stream, message)
+                self.downstream_controller.send_to(input_stream, message.to_json())
             time.sleep(1)
             
 if __name__ == "__main__":
