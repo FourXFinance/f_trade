@@ -1,3 +1,4 @@
+from os import name
 import sys
 sys.path.insert(1, 'lib')
 sys.path.insert(1, 'module/market/binance')
@@ -19,10 +20,38 @@ class Account(BinanceNode):
     max_open_trades = 10
     precision = 0
     lot_price_size = 25 # IN USDT
-    def __init__(self,name, downstream_port,ticker) -> None:
-        super().__init__(name)
-        self.ticker = ticker
-        self.add_downstream("DATA", downstream_port, zmq.PUB, bind=True, register=False)
+    def __init__(self,system_name, ticker_name,) -> None:
+        self.name = "Account"
+        self.ticker_name = ticker_name
+        super().__init__(system_name, self.name)
+        self.setup()
+
+    def setup(self):
+        self.load_config()
+        self.setup_upstream()
+        self.setup_downstream()
+
+    def load_config(self):
+        try:
+            with open("config/generated/" + self.system_name + "/account/" + self.ticker_name + ".json") as config:
+                raw_credentials = json.load(config)
+                print(raw_credentials)
+                self.config = raw_credentials
+        except FileNotFoundError:
+            print("config/generated/" + self.system_name + "/account/" + self.market_name + ".json")
+            raise FileNotFoundError
+
+    def setup_upstream(self):
+        account_proxy_port = self.config["account_proxy_port"]
+        self.upstream_controller.add_stream( 
+                            "DATA",
+                            account_proxy_port,
+                            zmq.SUB,
+                            bind=False,
+                            register=False
+                        )
+    def setup_downstream(self):
+        pass
 
     def get_open_orders(self):
         raw_data = self.client.get_open_orders(symbol=self.ticker)
@@ -58,7 +87,11 @@ class Account(BinanceNode):
         # If the above functions pass, we are ready to start consuming information
         # Accounts should wait for an algorithm to be ready. Then it will fetch new account data.
         while True:
-            # data_in = self.recv...
+            raw_data = self.upstream_controller.recv_from("DATA").decode('UTF-8')
+            data = {'topic': raw_data[:1], 'message':raw_data[1:]}
+            message = pd.read_json(data["message"])
+            print(message)
+            next
             try:
                # Check to see if we have too many open trades or not
                 if self.open_trades >= self.max_open_trades:
@@ -73,10 +106,7 @@ class Account(BinanceNode):
             time.sleep(1)
             
 if __name__ == "__main__":
-    downstream_port = int(sys.argv[1])
-    ticker = sys.argv[2]
-    name = "Account." + ticker
-    A = Account(name, downstream_port, ticker)
+    A = Account(sys.argv[1], sys.argv[2])
     A.run()
     
 

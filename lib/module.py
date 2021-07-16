@@ -74,8 +74,8 @@ class Algorithm(Node):
         try:
             with open("config/generated/" + self.system_name + "/algorithm/" + self.ticker + "/" + self.name + ".json") as config:
                 self.config_raw = json.load(config)
-                self.configuration_options = self.config_raw["configuration_options"]
-                print(self.configuration_options)
+                
+                print(self.config_raw)
         except FileNotFoundError:
             print("Algorithm Config Is Missing!")
 
@@ -133,7 +133,7 @@ class Proxy(Node):
         self.upstream_controller.add_stream( 
                             "UP",
                             algorithm_proxy_port,
-                            zmq.SUB,
+                            zmq.XSUB,
                             bind=True,
                             register=False
                         )
@@ -144,7 +144,7 @@ class Proxy(Node):
         self.downstream_controller.add_stream( 
                             "DOWN",
                             account_proxy_port,
-                            zmq.SUB,
+                            zmq.XPUB,
                             bind=True,
                             register=False
                         )
