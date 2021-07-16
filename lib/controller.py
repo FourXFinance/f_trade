@@ -26,7 +26,7 @@ class Stream:
         else:
             self.socket.connect("tcp://localhost:%d" % self.port)
             if self.type == zmq.SUB:
-                print("Port Topic:" + str(self.port) + "\t" + str(self.topic))
+               #print("Port Topic:" + str(self.port) + "\t" + str(self.topic))
                 self.socket.setsockopt_string(zmq.SUBSCRIBE, str(self.topic))
                 # self.socket.set_hwm(1)
 

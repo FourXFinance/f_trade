@@ -9,11 +9,12 @@ system:
   base_ticker_port: 4000
   base_ticker_offset: 100
   max_supported_algorithms_per_ticker: 50 # 0 -> 49
+  base_algorithm_port: 5000
   algorithm_offset: 1
   algorithm_proxy_offset: 50
   account_offset: 51
-  broker_port: 5000
-  trader_port: 6000
+  broker_port: 6000
+  trader_port: 7000
   trader_enabled: False
   logger_port: 10000
   logger_proxy_port: 9000

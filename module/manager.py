@@ -38,7 +38,6 @@ class Manager(Node):
                 self.mappings = raw_config["tracked_tickers"]
                 for mapping in self.mappings:
                     self.tickers_with_topic.update(mapping)
-                print(self.tickers_with_topic)
         # Load Ticker Configs
         for filename in os.listdir(os.getcwd() + "/config/generated/" + self.system_name + "/ticker"):
             with open(os.path.join(os.getcwd() + "/config/generated/" + self.system_name + "/ticker/"  + filename), 'r') as config:
@@ -52,12 +51,10 @@ class Manager(Node):
             # TODO: Extra Level of Abstraction for Collection of Controllers
             for interval in self.market_configs[market]["sources"].keys():
                 port = self.market_configs[market]["sources"][interval]
-                print(port)
                 #TODO: Multimarket support 
                 #TODO: Multiticker supports
                 for ticker in self.tickers_with_topic.keys():
                     topic = self.tickers_with_topic[ticker]
-                    print(topic)
                     self.upstream_controller.add_stream( 
                         interval + "." + ticker,
                         port,
@@ -70,10 +67,10 @@ class Manager(Node):
         for ticker in self.ticker_configs.keys():
             # TODO: Extra Level of Abstraction for Collection of Controllers
             for market in self.ticker_configs[ticker]["required_sources"].keys():
-                for source in self.ticker_configs[ticker]["required_sources"][market].keys():
-                    port = self.ticker_configs[ticker]["required_sources"][market][source]
+                for interval in self.ticker_configs[ticker]["required_sources"][market].keys():
+                    port = self.ticker_configs[ticker]["required_sources"][market][interval]
                     self.downstream_controller.add_stream( 
-                        ticker + "." + source,
+                        interval + "." + ticker,
                         port,
                         zmq.PUB,    
                         bind=True,
@@ -86,31 +83,31 @@ class Manager(Node):
             upstreams = self.upstream_controller.get_streams()
             downstreams = self.downstream_controller.get_streams()
             #print(all_streams)
-            stream_socket_map = {}
+            upstream_socket_map = {}
+            downstream_name_map = {}
             for stream in upstreams.keys():
                 #print(all_streams[stream])
                 #print(all_streams[stream].name)
-               stream_socket_map[upstreams[stream].get_socket()] = upstreams[stream].name
+               upstream_socket_map[upstreams[stream].get_socket()] = upstreams[stream].name
 
             #print(stream_socket_map)
             #print(len(self.upstream_controller.recv_snapshot().keys()))
+
+            for stream in downstreams.keys():
+                #print(all_streams[stream])
+                #print(all_streams[stream].name)
+               downstream_name_map[downstreams[stream].name] = downstreams[stream].get_socket()
+
+
             for stream in self.upstream_controller.recv_snapshot():
                 #We have a dictionary of streams. Which one do we have
-                print () # Yes we are using an object hash as a key!
-                input_stream = stream_socket_map[stream]
+                input_stream = upstream_socket_map[stream]
                 raw_data = stream.recv().decode('UTF-8')
                 data = {'topic': raw_data[:1], 'message':raw_data[1:]}
                 message = pd.read_json(data["message"])
-                #print(data["message"])
-                #print(pd.read_json(data["message"]))
-                # From here we can figure out what Upstream We have!
-                # Once we know that we can figure out what downstream(s) We need to send the data to!
-                # It might be good at this point to add data from where it came...
-            #TODO: Build Mappings of Ticker+Interval => Port
-            #TODO: Map Input to Output
-            #print("Getting Message")
-            #message = self.upstream_controller.recv_from("5m")
-            #print(message)
+                print(input_stream)
+                print(self.downstream_controller.get_stream(input_stream).port)
+                self.downstream_controller.send_to(input_stream, message)
             time.sleep(1)
             
 if __name__ == "__main__":
