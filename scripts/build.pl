@@ -63,6 +63,10 @@ printf("$f", "Error:" , "No Base Ticker Port Defined") and die ("Startup Error")
 my $base_ticker_offset = $system_config->{base_ticker_offset};
 printf("$f", "Error:" , "No Base Ticker Offset Defined") and die ("Startup Error") unless $base_ticker_offset;
 
+
+my $base_algorithm_port = $system_config->{base_algorithm_port};
+printf("$f", "Error:" , "No Base Algorithm Port Defined") and die ("Startup Error") unless $base_algorithm_port;
+
 my $algorithm_offset = $system_config->{algorithm_offset};
 printf("$f", "Error:" , "No Algorithm Offset Defined") and die ("Startup Error") unless $algorithm_offset;
 
@@ -87,6 +91,7 @@ printf("$f", "Error:" , "No Markets Defined") and die ("Startup Error") unless $
 
 printf("$f", "Step $step_count:" , "Checking Market Configurations");
 my $current_ticker_port = $base_ticker_port;
+my $current_algorithm_port = $base_algorithm_port;
 my $current_market_base = $base_market_port;
 my $current_algorithm_proxy_port = $base_ticker_port + $algorithm_proxy_offset;
 my $market_config = {};
@@ -145,12 +150,12 @@ for my $ticker (@$tickers) {
         name => $ticker_name,
         upstream_root_port => $current_ticker_port,
         required_sources => $required_sources,
-        algorithm_port => $current_ticker_port + $algorithm_offset,
+        algorithm_port => $current_algorithm_port,
     };
     #TODO: Handle Different Markets with Different Tickers
     push @{$market_config->{'binance'}->{tracked_tickers}}, {$ticker_name => $topic};
     $topic+=1;
-    my $current_algorithm_port = $current_ticker_port + 1;
+    # my $current_algorithm_port = $current_ticker_port;
     printf("$f", "Step $step_count.$sub_count:" , "Checking Algorithm Configuration for $ticker_name");
     for my $algorithm (@$ticker_algorithms){
         my $algorithm_enabled = $algorithm->{enabled};
@@ -161,12 +166,12 @@ for my $ticker (@$tickers) {
             printf("$f", "Error:" , "Algorithm $algorithm_name already defined for $ticker_name") and die ("Startup Error")
         }
         $algorithm_config->{$ticker_name}->{$algorithm_name} = {
-            algorithm_port => $current_ticker_port, #TODO: Figure out what to do with this?
+            algorithm_port => $current_algorithm_port, #TODO: Figure out what to do with this?
             algorithm_name => $algorithm_name,
             configuration_options => $config,
             proxy_port => $current_algorithm_proxy_port
         };
-        $current_algorithm_port+=1;
+        # $current_algorithm_port+=1;
     }
     $proxy_config->{$ticker_name} = {
         algorithm_proxy_port => $current_ticker_port + $algorithm_proxy_offset,
@@ -179,6 +184,7 @@ for my $ticker (@$tickers) {
     $sub_count+=1;
     $current_algorithm_proxy_port += $base_ticker_offset;
     $current_ticker_port += $base_ticker_offset;
+    $current_algorithm_port += $base_ticker_offset;
     $ticker_count +=1;
 }
 $sub_count=1;
