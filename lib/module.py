@@ -106,7 +106,47 @@ class Algorithm(Node):
 
 
 class Proxy(Node):
-    def __init__(self, name, id):
-        super().__init__(name, id=id)
+    #TODO: Proxies should be more generic
+    def __init__(self, system_name, ticker_name):
+        self.name = "PROXY"
+        self.ticker_name = ticker_name
+        super().__init__(system_name,self.name)
+        self.setup()
+
+    def setup(self):
+        self.load_config()
+        self.setup_upstream()
+        self.setup_downstream()
+
+    def load_config(self):
+        try:
+            with open("config/generated/" + self.system_name + "/proxy/" + self.ticker_name + ".json") as config:
+                raw_credentials = json.load(config)
+                print(raw_credentials)
+                self.config = raw_credentials
+        except FileNotFoundError:
+            print("config/generated/" + self.system_name + "/proxy/" + self.market_name + ".json")
+            raise FileNotFoundError
+
+    def setup_upstream(self):
+        algorithm_proxy_port = self.config["algorithm_proxy_port"]
+        self.upstream_controller.add_stream( 
+                            "UP",
+                            algorithm_proxy_port,
+                            zmq.SUB,
+                            bind=True,
+                            register=False
+                        )
+        
+
+    def setup_downstream(self):
+        account_proxy_port = self.config["account_proxy_port"]
+        self.downstream_controller.add_stream( 
+                            "DOWN",
+                            account_proxy_port,
+                            zmq.SUB,
+                            bind=True,
+                            register=False
+                        )
     def run(self):
-        return super().run()
+        zmq.proxy(self.upstream_controller.get_stream("UP").get_socket(), self.downstream_controller.get_stream("DOWN").get_socket())

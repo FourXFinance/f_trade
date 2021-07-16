@@ -265,6 +265,8 @@ for my $account_name  (keys %$account_config) {
     close(FH);
 }
 
+}
+
 # Build Manager Configs # A BETTER WAY TO DO THIS IS TO GET THE MANAGER NODE TO READ FROM Market configs as well as ticker configs.
 # And This is exactly what I intend to do.
 # print (Dumper($market_config));

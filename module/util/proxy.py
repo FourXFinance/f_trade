@@ -4,8 +4,7 @@ from module import Proxy
 
 # A proxy simply connects the port mentioned in arg[2] to arg[3]
 if __name__ == "__main__":
-    proxy_name = sys.argv[1]
-    upstream_port = int(sys.argv[2])
-    downstream_port = int(sys.argv[3])
-    P = Proxy(proxy_name, upstream_port, downstream_port)
+    system_name = sys.argv[1]
+    ticker_name = (sys.argv[2])
+    P = Proxy(system_name, ticker_name)
     P.run()
