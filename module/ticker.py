@@ -83,7 +83,7 @@ class Ticker(Node):
                 data = {'topic': raw_data[:1], 'message':raw_data[1:]}
                 message = pd.read_json(data["message"])
                 print(message)
-                self.downstream_controller.send_to("DATA", message)
+                self.downstream_controller.send_to("DATA", message.to_json())
             time.sleep(1)
 
 if __name__ == "__main__":

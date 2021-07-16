@@ -68,6 +68,7 @@ class Algorithm(Node):
     def __init__(self, system_name, ticker):
         self.ticker = ticker
         super().__init__(system_name, self.name)
+        self.setup()
         # Algorithms should have HWM set to 1!
     def load_config(self):
         try:

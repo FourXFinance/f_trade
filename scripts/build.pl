@@ -63,7 +63,6 @@ printf("$f", "Error:" , "No Base Ticker Port Defined") and die ("Startup Error")
 my $base_ticker_offset = $system_config->{base_ticker_offset};
 printf("$f", "Error:" , "No Base Ticker Offset Defined") and die ("Startup Error") unless $base_ticker_offset;
 
-
 my $base_algorithm_port = $system_config->{base_algorithm_port};
 printf("$f", "Error:" , "No Base Algorithm Port Defined") and die ("Startup Error") unless $base_algorithm_port;
 
@@ -93,7 +92,7 @@ printf("$f", "Step $step_count:" , "Checking Market Configurations");
 my $current_ticker_port = $base_ticker_port;
 my $current_algorithm_port = $base_algorithm_port;
 my $current_market_base = $base_market_port;
-my $current_algorithm_proxy_port = $base_ticker_port + $algorithm_proxy_offset;
+my $current_algorithm_proxy_port = $base_algorithm_port + $algorithm_proxy_offset;
 my $market_config = {};
 for my $market (@$markets) {
     my $current_market_port = $current_market_base;
