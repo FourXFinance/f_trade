@@ -39,8 +39,13 @@ my @trader_modules;
 print (color('bold red'));
 print(localtime()."\n");
 print(color('bold blue'));
-print("The Following F Trader System Nodes exist:\n");
+
 my @found_modules = split ('\n',  `pgrep -laf "python3 $cur_dir/*"`);
+print("The Following F Trader System Nodes exist:\n") if @found_modules > 1;
+unless (@found_modules > 1) {
+    print("No F Trader System Nodes are Running\n");
+    exit();
+}
 push @market_modules , grep(/\/market.py/, @found_modules);
 push @manager_modules , grep(/\/manager.py/, @found_modules);
 push @ticker_modules , grep(/\/ticker.py/, @found_modules);
@@ -51,9 +56,9 @@ push @broker_modules , grep(/\/trader.py/, @found_modules);
 push @trader_modules , grep(/\/trader.py/, @found_modules);
 
 
-print("\n");
+print("\n")  if @market_modules;
 print(color('bold blue'));
-print("Market Nodes Running:\n");
+print("Market Nodes Running:\n") if @market_modules;
 print(color('bold white'));
 foreach(@market_modules) {        
     my @split_module = split(" ", $_);
@@ -61,9 +66,9 @@ foreach(@market_modules) {
     print("".$_."\n");
 }
 
-print("\n");
+print("\n") if @manager_modules;
 print(color('bold blue'));
-print("Manager Nodes Running:\n");
+print("Manager Nodes Running:\n") if @manager_modules;
 print(color('bold white'));
 foreach(@manager_modules) {        
     my @split_module = split(" ", $_);
@@ -71,9 +76,9 @@ foreach(@manager_modules) {
     print("".$_."\n");
 }
 
-print("\n");
+print("\n") if @ticker_modules; 
 print(color('bold blue'));
-print("Ticker Nodes Running:\n");
+print("Ticker Nodes Running:\n") if @ticker_modules;
 print(color('bold white'));
 foreach(@ticker_modules) {        
     my @split_module = split(" ", $_);
@@ -81,9 +86,9 @@ foreach(@ticker_modules) {
     print("".$_."\n");
 }
 
-print("\n");
+print("\n") if @algorithm_modules;
 print(color('bold blue'));
-print("Algorithm Nodes Running:\n");
+print("Algorithm Nodes Running:\n") if @algorithm_modules;
 print(color('bold white'));
 foreach(@algorithm_modules) {        
     my @split_module = split(" ", $_);
@@ -91,9 +96,9 @@ foreach(@algorithm_modules) {
     print("".$_."\n");
 }
 
-print("\n");
+print("\n") if @proxy_modules;
 print(color('bold blue'));
-print("Proxy Nodes Running:\n");
+print("Proxy Nodes Running:\n") if @proxy_modules;
 print(color('bold white'));
 foreach(@proxy_modules) {        
     my @split_module = split(" ", $_);
@@ -102,20 +107,20 @@ foreach(@proxy_modules) {
 }
 
 
-print("\n");
+print("\n") if @account_modules;
 print(color('bold blue'));
-print("Account Nodes Running:\n");
+print("Account Nodes Running:\n")  if @account_modules;
 print(color('bold white'));
-foreach(@algorithm_modules) {        
+foreach(@account_modules) {        
     my @split_module = split(" ", $_);
     next unless $split_module[1] eq "python3";
     print("".$_."\n");
 }
 
 
-print("\n");
+print("\n") if @broker_modules;
 print(color('bold blue'));
-print("Broker Nodes Running:\n");
+print("Broker Nodes Running:\n") if @broker_modules;
 print(color('bold white'));
 foreach(@broker_modules) {        
     my @split_module = split(" ", $_);
@@ -123,9 +128,9 @@ foreach(@broker_modules) {
     print("".$_."\n");
 }
 
-print("\n");
+print("\n") if @trader_modules;
 print(color('bold blue'));
-print("Trader Nodes Running:\n");
+print("Trader Nodes Running:\n") if @trader_modules;
 print(color('bold white'));
 foreach(@trader_modules) {        
     my @split_module = split(" ", $_);
