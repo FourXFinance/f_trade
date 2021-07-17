@@ -8,3 +8,5 @@ module/view/django/__pycache__/*
 module/view/django/db.*
 config/secrets/*
 **/__pycache__/
+.f_trader
+.f_trader/*
