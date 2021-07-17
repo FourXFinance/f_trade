@@ -4,6 +4,7 @@ use warnings;
 use YAML::XS 'LoadFile';
 use JSON;
 use Data::Dumper;
+use Term::ANSIColor;
 use Storable 'dclone';
 die "System Name not provded" unless @ARGV;
 my ($system_name) = lcfirst shift;
@@ -36,6 +37,7 @@ my $f = "%-30s%-30s\n";
 
 # Validate System Config
 $system_config= $config->{system};
+print color('bold magenta');
 printf("$f", "Error:" , "No System Entry Defined") and die ("Startup Error")unless $system_config;
 my $config_name = $system_config->{name};
 
@@ -265,7 +267,7 @@ for my $account_name  (keys %$account_config) {
     close(FH);
 }
 
-}
+
 
 # Build Manager Configs # A BETTER WAY TO DO THIS IS TO GET THE MANAGER NODE TO READ FROM Market configs as well as ticker configs.
 # And This is exactly what I intend to do.
