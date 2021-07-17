@@ -12,6 +12,9 @@ use ZMQ::FFI::Constants qw(ZMQ_PULL ZMQ_SUB ZMQ_DONTWAIT);
 use TryCatch;
 use Time::HiRes qw(usleep);
 
+print "Error: Root Permissions Required\n" unless not $>;
+exit (-1);
+
 my $context = ZMQ::FFI->new();
 
 my $subscriber = $context->socket(ZMQ_SUB);
