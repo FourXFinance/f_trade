@@ -18,7 +18,7 @@ my $ticker_config = {};
 my $algorithm_config = {};
 my $proxy_config = {};
 my $account_config = {};
-my $trader_config = {};
+#my $trader_config = {};
 my $manager_config = {};
 eval  {
     $config = LoadFile("config/system/$system_name.yaml");
@@ -77,11 +77,14 @@ printf("$f", "Error:" , "No Algorithm Proxy Offset Defined") and die ("Startup E
 my $account_offset = $system_config->{account_offset};
 printf("$f", "Error:" , "No Account Offset Defined") and die ("Startup Error") unless $account_offset;
 
-my $broker_port = $system_config->{broker_port};
-printf("$f", "Error:" , "No Broker Port Defined") and die ("Startup Error") unless $broker_port;
-
 my $logger_port = $system_config->{logger_port};
 printf("$f", "Error:" , "No Logger Port Defined") and die ("Startup Error") unless $logger_port;
+
+my $broker_proxy_port = $system_config->{broker_proxy_port};
+printf("$f", "Error:" , "No Broker Proxy Port Defined") and die ("Startup Error") unless $broker_proxy_port;
+
+my $trader_proxy_port = $system_config->{trader_proxy_port};
+printf("$f", "Error:" , "No Trader Proxy Port Defined") and die ("Startup Error") unless $trader_proxy_port;
 
 printf("$f", "Base Ticker Port (Offset):" , $base_ticker_port." (".$base_ticker_offset.")");
 
@@ -180,7 +183,7 @@ for my $ticker (@$tickers) {
     };
     $account_config->{$ticker_name} = {
         account_proxy_port => $current_algorithm_port + $account_offset,
-        broker_port => $broker_port,
+        broker_proxy_port => $broker_proxy_port,
     };
     $sub_count+=1;
     $current_algorithm_proxy_port += $base_ticker_offset;
@@ -267,6 +270,29 @@ for my $account_name  (keys %$account_config) {
     close(FH);
 }
 
+# Build Broker Configs
+qx\mkdir ./config/generated/$system_name/broker/\;
+my $broker_config = {
+    broker_proxy_port => $broker_proxy_port,
+    trader_proxy_port => $trader_proxy_port
+};
+my $json = encode_json $broker_config;
+qx\touch ./config/generated/$system_name/broker/$system_name.json\;
+open(FH, '>', "./config/generated/$system_name/broker/$system_name.json") or die $!;
+print FH $json;
+close(FH);
+
+
+# Build Trader Configs
+qx\mkdir ./config/generated/$system_name/trader/\;
+my $trader_config = {
+    trader_proxy_port => $trader_proxy_port
+};
+my $json = encode_json $trader_config;
+qx\touch ./config/generated/$system_name/trader/$system_name.json\;
+open(FH, '>', "./config/generated/$system_name/trader/$system_name.json") or die $!;
+print FH $json;
+close(FH);
 
 
 # Build Manager Configs # A BETTER WAY TO DO THIS IS TO GET THE MANAGER NODE TO READ FROM Market configs as well as ticker configs.

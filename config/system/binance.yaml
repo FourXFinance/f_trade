@@ -13,8 +13,8 @@ system:
   algorithm_offset: 1
   algorithm_proxy_offset: 50
   account_offset: 51
-  broker_port: 6000
-  trader_port: 7000
+  broker_proxy_port: 6000
+  trader_proxy_port: 7000
   trader_enabled: False
   logger_port: 10000
   logger_proxy_port: 9000

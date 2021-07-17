@@ -51,7 +51,14 @@ class Account(BinanceNode):
                             register=False
                         )
     def setup_downstream(self):
-        pass
+        broker_proxy_port = self.config["broker_proxy_port"]
+        self.downstream_controller.add_stream( 
+                            "PROXY",
+                            broker_proxy_port,
+                            zmq.PUB,
+                            bind=False,
+                            register=False
+                        )
 
     def get_open_orders(self):
         raw_data = self.client.get_open_orders(symbol=self.ticker)
@@ -91,6 +98,7 @@ class Account(BinanceNode):
             data = {'topic': raw_data[:1], 'message':raw_data[1:]}
             message = pd.read_json(data["message"])
             print(message)
+            self.downstream_controller.send_to("PROXY", message.to_json())
             next
             try:
                # Check to see if we have too many open trades or not

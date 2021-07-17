@@ -39,7 +39,7 @@ class Coinflip(Algorithm):
             decision = "BUY"
             if flip > float(self.head_weight):
                 decision = "SELL"
-            
+            # Forward Decision to Sell
             time.sleep(int(self.period)) # Let's not be too hasty
             
 
