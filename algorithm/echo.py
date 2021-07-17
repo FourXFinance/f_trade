@@ -21,6 +21,7 @@ class Echo(Algorithm):
     def __init__(self, system_name, ticker) -> None:
         super().__init__(system_name, ticker)
 
+
     def iterate(self):
         # To Be Used for Callbacks! - Coming Soon!!!
         pass

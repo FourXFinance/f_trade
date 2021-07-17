@@ -83,6 +83,7 @@ class MarketWorker(BinanceNode):
         print(ticker_name + "\t" + str(self.tickers_with_topic[ticker_name]))
         self.send_to(self.interval, df.to_json(), topic=self.tickers_with_topic[ticker_name])
     
+    # TODO: This value 'limit' Should be dynamically calculated to avoid over/under fetching data
     async def get_last_trades(self, ticker_name, limit=50):
         raw_data = None
         try:
