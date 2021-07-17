@@ -9,7 +9,7 @@ use Cwd;
 use Storable 'dclone';
 
 print "Error: Root Permissions Required\n" unless not $>;
-exit (-1);
+exit (-1) unless not $>;
 # TODO: These functions should probably be in a more reusable module, but Perl modules suck
 sub ping_node {
     my $target_node = shift;

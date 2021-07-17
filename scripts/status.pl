@@ -33,6 +33,7 @@ my $cur_dir = getcwd;
 print("The Following F Trader System Nodes exist:\n");
 for my $lib (@libs) {
     my @found_modules = split ('\n',  `pgrep -laf "python3 $cur_dir/$lib/*"`);
+    my @market_modules = grep $_ ~~ "*market*", @found_modules;
     foreach(@found_modules) {        
         my @split_module = split(" ", $_);
         next unless $split_module[1] eq "python3";
