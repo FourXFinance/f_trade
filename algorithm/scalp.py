@@ -33,6 +33,7 @@ class Scalp(Algorithm):
         self.target_percent = self.config_raw["configuration_options"]["target_growth"] or 1.03
         self.window = int(self.config_raw["configuration_options"]["window"]) or 3
         self.count = 0
+        self.fail_count = 0
     def iterate(self):
         # To Be Used for Callbacks! - Coming Soon!!!
         pass
@@ -40,6 +41,7 @@ class Scalp(Algorithm):
         self.previous_count = self.config_raw["configuration_options"]["target_growth"] or 1.03
         self.window = int(self.config_raw["configuration_options"]["window"]) or 3
         self.count = 0
+        self.fail_count = 0
     def check(self, data):
         raw_data = data.values.tolist()
         cur_time = None
@@ -47,6 +49,7 @@ class Scalp(Algorithm):
         highest_id = None
         # TODO: This is complicated and needs a lot of optiization. Time to go over some more advanced data structures.
         # Essentially, this takes a lot of time.. And might not be required. Ideally we should try build a stream of data
+        
         raw_data = sorted(raw_data, key=lambda entry: entry[0]["id"]) # Ooh Baby it's lambda time.
         price = 0.00
         for trade in raw_data:
@@ -81,6 +84,7 @@ class Scalp(Algorithm):
             print(bcolors.FAIL + '\u2198')
             self.previous_price = None
             self.count = 0
+            self.fail_count +=1
             #TODO: weight increase?
             next
         if self.count == self.window:

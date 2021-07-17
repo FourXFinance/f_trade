@@ -11,16 +11,18 @@ use JSON;
 
 use Data::Dumper;
 use Getopt::Std;
+use Cwd;
 
 use vars qw($opt_n);
 
 getopts("n:");
 my $enable_debug = 0;
 my $target_node = defined $opt_n ? $opt_n : undef;
+my $cur_dir = getcwd;
 
 my @shutdown_libs = ('module', 'algorithm');
 for my $lib (@shutdown_libs) {
-    my @found_modules = split ('\n',  `pgrep -laf "python3 $lib/*"`);
+    my @found_modules = split ('\n',  `pgrep -laf "python3 $cur_dir/$lib/*"`);
     foreach(@found_modules) {
         print("DEBUG: ".$_."\n") if $enable_debug;
         my @split_module = split(" ", $_);

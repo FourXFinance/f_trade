@@ -11,6 +11,7 @@ use JSON;
 
 use Data::Dumper;
 use Getopt::Std;
+use Cwd;
 
 use vars qw($opt_n $opt_a);
 
@@ -23,10 +24,10 @@ if ($opt_a) {
 } else {
     @libs= ('module', 'algorithm');
 }
- 
+my $cur_dir = getcwd;
 print("The Following F Trader System Nodes exist:\n");
 for my $lib (@libs) {
-    my @found_modules = split ('\n',  `pgrep -laf "python3 $lib/*"`);
+    my @found_modules = split ('\n',  `pgrep -laf "python3 $cur_dir/$lib/*"`);
     foreach(@found_modules) {        
         my @split_module = split(" ", $_);
         next unless $split_module[1] eq "python3";
