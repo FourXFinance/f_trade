@@ -13,7 +13,7 @@ use TryCatch;
 use Time::HiRes qw(usleep);
 
 print "Error: Root Permissions Required\n" unless not $>;
-exit (-1);
+exit (-1) unless not $>;
 
 my $context = ZMQ::FFI->new();
 

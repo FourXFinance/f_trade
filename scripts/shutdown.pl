@@ -18,7 +18,8 @@ use vars qw($opt_n);
 getopts("n:");
 
 print "Error: Root Permissions Required\n" unless not $>;
-exit (-1);
+exit (-1) unless not $>;
+
 my $enable_debug = 0;
 my $target_node = defined $opt_n ? $opt_n : undef;
 my $cur_dir = getcwd;

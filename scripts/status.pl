@@ -18,7 +18,7 @@ use vars qw($opt_n $opt_a);
 getopts("n:a:");
 
 print "Error: Root Permissions Required\n" unless not $>;
-exit (-1);
+exit (-1) unless not $>;
 
 
 my $enable_debug = 0;
