@@ -20,6 +20,7 @@ class Scalp(Algorithm):
     name = "scalp"
     def __init__(self, system_name, ticker) -> None:
         super().__init__(system_name, ticker)
+        self.ticker_name = ticker
         self.setup_defaults()
         self.setup_config()
         pass
@@ -30,14 +31,14 @@ class Scalp(Algorithm):
 
     def setup_config(self):
         self.target_percent = self.config_raw["configuration_options"]["target_growth"] or 1.03
-        self.window = self.config_raw["configuration_options"]["window"] or 3
+        self.window = int(self.config_raw["configuration_options"]["window"]) or 3
         self.count = 0
     def iterate(self):
         # To Be Used for Callbacks! - Coming Soon!!!
         pass
     def clean(self):
         self.previous_count = self.config_raw["configuration_options"]["target_growth"] or 1.03
-        self.window = self.config_raw["configuration_options"]["window"] or 3
+        self.window = int(self.config_raw["configuration_options"]["window"]) or 3
         self.count = 0
     def check(self, data):
         raw_data = data.values.tolist()
@@ -70,7 +71,6 @@ class Scalp(Algorithm):
         if self.previous_price == None:
             print(bcolors.WARNING + "\u0398")
             self.previous_price = price
-            self.count+=1
         elif self.previous_price < price:
             print(bcolors.OKGREEN + '\u2197')
             self.previous_price = price
@@ -85,7 +85,7 @@ class Scalp(Algorithm):
             next
         if self.count == self.window:
             #Make a Buy Request
-            print("Buying Baby")
+            print(bcolors.OKGREEN + "(" + "\u0024" + ") Buying " + self.ticker_name)
             self.downstream_controller.send_to("PROXY", "BUY ME")
         
 

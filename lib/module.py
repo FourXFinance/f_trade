@@ -63,7 +63,6 @@ class Node:
         # TODO: Handle Heartbeat with Callbacks! - Coming Soon!!!
         return "Beep!"
 
-
 class Algorithm(Node):
     def __init__(self, system_name, ticker):
         self.ticker = ticker
