@@ -20,15 +20,13 @@ class Stream:
 
     def setup_stream(self):
         self.socket = self.context.socket(self.type)
+        self.socket.set_hwm(1)
         if self.bind:
             self.socket.bind("tcp://*:%d" % self.port)
-            # self.socket.set_hwm(1)
         else:
             self.socket.connect("tcp://localhost:%d" % self.port)
             if self.type == zmq.SUB:
-               #print("Port Topic:" + str(self.port) + "\t" + str(self.topic))
                 self.socket.setsockopt_string(zmq.SUBSCRIBE, str(self.topic))
-                # self.socket.set_hwm(1)
 
     def get_socket(self):
         return self.socket
