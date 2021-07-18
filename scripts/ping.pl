@@ -12,8 +12,6 @@ use ZMQ::FFI::Constants qw(ZMQ_PULL ZMQ_SUB ZMQ_DONTWAIT);
 use TryCatch;
 use Time::HiRes qw(usleep);
 
-print "Error: Root Permissions Required\n" unless not $>;
-exit (-1) unless not $>;
 
 my $context = ZMQ::FFI->new();
 

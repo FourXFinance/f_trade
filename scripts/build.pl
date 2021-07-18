@@ -8,8 +8,8 @@ use Term::ANSIColor;
 use Cwd;
 use Storable 'dclone';
 
-print "Error: Root Permissions Required\n" unless not $>;
-exit (-1) unless not $>;
+# print "Error: Root Permissions Required\n" unless not $>;
+# exit (-1) unless not $>;
 # TODO: These functions should probably be in a more reusable module, but Perl modules suck
 sub ping_node {
     my $target_node = shift;
@@ -363,7 +363,7 @@ foreach (keys %$market_config) {
 		# Only the child does this\
             eval{
                 #TODO: Explain What is going onhere
-                exec("python3 $cur_dir/module/system/$market_name/market.py $system_name $market_name $_ >> /dev/$$\_1 2>> /dev/$$\_2 &");
+                exec("python3 $cur_dir/module/system/$market_name/market.py $system_name $market_name $_ >> /dev/null 2>> /dev/null &");
                 exit(); # < Technically not possible to reach
                 # NO EXECUTION BELOW THIS POINT!
             };
@@ -390,7 +390,7 @@ print color('bold blue');
 		# Only the child does this\
             eval{
                 #TODO: Explain What is going onhere
-                exec("python3 $cur_dir/module/manager.py $system_name  >> /dev/$$\_1 2>> /dev/$$\_2 &");
+                exec("python3 $cur_dir/module/manager.py $system_name  >> /dev/null\ 2>> /dev/null &");
                 exit(); # < Technically not possible to reach
                 # NO EXECUTION BELOW THIS POINT!
             };
@@ -417,7 +417,7 @@ foreach (keys %$ticker_config) {
 		# Only the child does this\
             eval{
                 #TODO: Explain What is going onhere
-                exec("python3 $cur_dir/module/ticker.py $system_name $ticker_name  >> /dev/$$\_1 2>> /dev/$$\_2 &");
+                exec("python3 $cur_dir/module/ticker.py $system_name $ticker_name  >> /dev/null 2>> /dev/null &");
                 exit(); # < Technically not possible to reach
                 # NO EXECUTION BELOW THIS POINT!
             };
@@ -448,7 +448,7 @@ foreach (keys %$algorithm_config) {
 		# Only the child does this\
             eval{
                 #TODO: Explain What is going onhere
-                exec("python3 $cur_dir/algorithm/$_.py $system_name $ticker_name $_ >> /dev/$$\_1  &");
+                exec("python3 $cur_dir/algorithm/$_.py $system_name $ticker_name $_ >> /dev/null  &");
                 exit(); # < Technically not possible to reach
                 # NO EXECUTION BELOW THIS POINT!
             };
@@ -477,7 +477,7 @@ foreach (keys %$proxy_config) {
 		# Only the child does this\
             eval{
                 #TODO: Explain What is going onhere
-                exec("python3 $cur_dir/module/util/proxy.py $system_name $ticker_name  >> /dev/$$\_1  &");
+                exec("python3 $cur_dir/module/util/proxy.py $system_name $ticker_name  >> /dev/null  &");
                 exit(); # < Technically not possible to reach
                 # NO EXECUTION BELOW THIS POINT!
             };
@@ -504,7 +504,7 @@ foreach (keys %$account_config) {
 		# Only the child does this\
             eval{
                 #TODO: Explain What is going onhere
-                exec("python3 $cur_dir/module/system/$system_name/account.py $system_name $ticker_name  >> /dev/$$\_1  &");
+                exec("python3 $cur_dir/module/system/$system_name/account.py $system_name $ticker_name  >> /dev/null  &");
                 exit(); # < Technically not possible to reach
                 # NO EXECUTION BELOW THIS POINT!
             };
@@ -528,7 +528,7 @@ if (! $pid) {
 # Only the child does this\
     eval{
         #TODO: Explain What is going onhere
-        exec("python3 $cur_dir/module/broker.py $system_name   >> /dev/$$\_1  &");
+        exec("python3 $cur_dir/module/broker.py $system_name   >> /dev/null  &");
         exit(); # < Technically not possible to reach
         # NO EXECUTION BELOW THIS POINT!
     };
@@ -548,7 +548,7 @@ if (! $pid) {
 # Only the child does this\
     eval{
         #TODO: Explain What is going onhere
-        exec("python3 $cur_dir/module/system/$system_name/trader.py $system_name   >> /dev/$$\_1  &");
+        exec("python3 $cur_dir/module/system/$system_name/trader.py $system_name   >> /dev/null  &");
         exit(); # < Technically not possible to reach
         # NO EXECUTION BELOW THIS POINT!
     };
