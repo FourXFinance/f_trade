@@ -52,7 +52,7 @@ push @ticker_modules , grep(/\/ticker.py/, @found_modules);
 push @algorithm_modules , grep(/\/algorithm/, @found_modules);
 push @account_modules , grep(/\/account.py/, @found_modules);
 push @proxy_modules , grep(/\/proxy.py/, @found_modules);
-push @broker_modules , grep(/\/trader.py/, @found_modules);
+push @broker_modules , grep(/\/broker.py/, @found_modules);
 push @trader_modules , grep(/\/trader.py/, @found_modules);
 
 

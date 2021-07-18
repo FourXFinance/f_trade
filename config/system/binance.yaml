@@ -45,7 +45,7 @@ tickers:
 - name: "SHIBEUR"
   enabled: True
   algorithms:
-  - name: echo
+  - name: always_buy
     enabled: True
   - name: scalp
     enabled: True

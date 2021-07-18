@@ -48,7 +48,7 @@ There are many types of sockets. I cannot cover them all here. I would recommend
 
 This document will be updated with more information as development continues.
 
-If you are ever wondering what needs to be worked on. Simple type  `git grep TODO` And see what pops up
+If you are ever wondering what needs to be worked on. Simple type `git grep TODO` And see what pops up
 
 ## How to run f_trader(tm)
 

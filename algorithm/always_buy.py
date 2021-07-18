@@ -16,6 +16,7 @@ import sys
 import csv
 from datetime import datetime
 from util import bcolors
+
 class AlwaysBuy(Algorithm):
     name = "always_buy"
     def __init__(self, system_name, ticker) -> None:
@@ -33,7 +34,13 @@ class AlwaysBuy(Algorithm):
         pass
     def check(self, data):
         print(bcolors.OKGREEN + "(" + "\u0024" + ") Buying " + self.ticker_name)
-        self.downstream_controller.send_to("PROXY", "BUY ME")
+        message = {}
+        message["result"] = "BUY"
+        message["weight"] = 0
+        message["ticker_name"] = self.ticker_name
+        # df = pd.DataFrame(data=message)
+        print(message)
+        self.downstream_controller.send_to("PROXY", json.dumps(message))
             
         
 

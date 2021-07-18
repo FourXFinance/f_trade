@@ -48,10 +48,15 @@ class BinanceTrader(BinanceNode):
 
     def run(self):
         while True:
-            raw_data = self.recv_from("DATA").decode('UTF-8')
-            data = {'topic': raw_data[:1], 'message':raw_data[1:]}
-            message = pd.read_json(data["message"])
-            print(message)
+            try:
+                raw_data = self.recv_from("DATA").decode('UTF-8')
+                data = {'topic': raw_data[:1], 'message':raw_data[1:]}
+                print(data["message"])
+                if data["message"]["result"] == "BUY":
+                    # Let's submit a buy order
+                    pass
+            except Exception as e:
+                print(e)
             time.sleep(1)
             
 if __name__ == "__main__":

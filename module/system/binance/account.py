@@ -96,10 +96,10 @@ class Account(BinanceNode):
         while True:
             raw_data = self.upstream_controller.recv_from("DATA").decode('UTF-8')
             data = {'topic': raw_data[:1], 'message':raw_data[1:]}
-            message = pd.read_json(data["message"])
-            print(message)
-            self.downstream_controller.send_to("PROXY", message.to_json())
-            next
+            print("We Got Something")
+            print (data["message"])
+
+            #print(message)
             try:
                # Check to see if we have too many open trades or not
                 if self.open_trades >= self.max_open_trades:
@@ -109,6 +109,10 @@ class Account(BinanceNode):
                     # Sorry, nothing to do here! We have exausted the maximum number of open trades
                     # TODO: Log Abandoned Trade
                     continue
+                else:
+                    # We're In Business
+                    self.downstream_controller.send_to("PROXY", data["message"]);
+                    
             except Exception as e:
                 print("Caught Exception: " + str(e))
             time.sleep(1)
