@@ -89,7 +89,20 @@ do
 done
 
 tput setaf 5;
-echo "F_Trader has Been Installed"
+
 
 # Setup required aliases
 
+CUR_DIR="$(cd "$(dirname "$0")" && pwd)";
+if [ -f ~/.f_trader_rc ]; then
+    tput setaf 1;
+    echo "Removing Old F_trader Configuration";
+    rm ~/.f_trader_rc;
+fi
+touch ~/.f_trader_rc;
+echo "alias F='perl ${CUR_DIR}/explore.pl'" >> ~/.f_trader_rc;
+echo "alias B='perl ${CUR_DIR}/build.pl'" >> ~/.f_trader_rc;
+echo "alias S='perl ${CUR_DIR}/status.pl'" >> ~/.f_trader_rc;
+echo "alias K='perl ${CUR_DIR}/shutdown.pl'" >> ~/.f_trader_rc;
+tput setaf 2;
+echo "F_Trader has Been Installed (Don't forget to source ~/.f_trader_rc for shorthand commands)";
