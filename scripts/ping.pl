@@ -2,6 +2,7 @@
 
 # This script will ping a target node for a response.
 # If it does not get a response. Something bad should happen
+# This has to wait until we have event driven trading nodes.
 use strict;
 use warnings;
 use v5.10;
