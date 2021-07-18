@@ -11,7 +11,6 @@ import time
 import numpy as np
 import pandas as pd
 import json
-import signal
 import sys
 import csv
 from datetime import datetime
@@ -33,6 +32,7 @@ class AlwaysBuy(Algorithm):
     def clean(self):
         pass
     def check(self, data):
+        # This Algorithm Always Submits a Request to Buy Whenever it gets data
         print(bcolors.OKGREEN + "(" + "\u0024" + ") Buying " + self.ticker_name)
         message = {}
         message["result"] = "BUY"
