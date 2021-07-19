@@ -1,6 +1,7 @@
 #!/usr/bin/perl
 
-# This script will send requests to the executive python node
+# This script will ping a target node for a response.
+# If it does not get a response. Something bad should happen
 use strict;
 use warnings;
 use v5.10;
@@ -8,8 +9,11 @@ use v5.10;
 use ZMQ::FFI;
 use ZMQ::FFI::Constants qw(ZMQ_PULL ZMQ_SUB ZMQ_DONTWAIT);
 
-use TryCatch;s
+use TryCatch;
 use Time::HiRes qw(usleep);
+
+print "Error: Root Permissions Required\n" unless not $>;
+exit (-1) unless not $>;
 
 my $context = ZMQ::FFI->new();
 

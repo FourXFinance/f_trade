@@ -3,6 +3,7 @@ from time import time
 sys.path.insert(1, 'lib')
 from constants import POLLER_TIMEOUT
 from os import name
+
 import zmq
 
 # A Stream is a ZMQ socket
@@ -10,7 +11,7 @@ class Stream:
     def __init__(self, name, port, type, topic="0", bind=False) -> None:
         self.context = zmq.Context()
         self.name = name
-        self.port = port
+        self.port = int(port)
         self.topic = int(topic)
         self.type = type
         self.bind = bind
@@ -18,18 +19,22 @@ class Stream:
         self.setup_stream()
 
     def setup_stream(self):
-        self.socket = self.context.socket(self.type)        
+        self.socket = self.context.socket(self.type)
         if self.bind:
             self.socket.bind("tcp://*:%d" % self.port)
             # self.socket.set_hwm(1)
         else:
             self.socket.connect("tcp://localhost:%d" % self.port)
             if self.type == zmq.SUB:
+               #print("Port Topic:" + str(self.port) + "\t" + str(self.topic))
                 self.socket.setsockopt_string(zmq.SUBSCRIBE, str(self.topic))
                 # self.socket.set_hwm(1)
 
     def get_socket(self):
         return self.socket
+
+    def send(self, message, topic="0"):
+        self.socket.send_string("%s %s" % (topic, message))
 
 class Controller:
     def __init__(self) -> None:
@@ -37,10 +42,10 @@ class Controller:
         self.poller = zmq.Poller()
         self.PTIMEOUT = POLLER_TIMEOUT
     
-    def add_stream(self, name, port, type, topic="0", bind=False, register=True):
+    def add_stream(self, name, port, type, topic="0", bind=False, register=False):
         if name in self.streams:
             raise Exception("Controller already has stream")
-        self.streams[name] = Stream(name, port, type, topic, bind)
+        self.streams[name] = Stream(name, port, type, topic, bind)      
         if register:
             self.poller.register(self.streams[name].get_socket(), zmq.POLLIN)
     
@@ -58,12 +63,12 @@ class Controller:
 
     def send(self, message):
         s = self.streams[list(self.streams.keys())[0]]
-        s.send(message.encode('utf-8'))
+        s.send(message)
         return True
 
-    def send_to(self, target_stream, message):
+    def send_to(self, target_stream, message, topic="0"):
         s = self.streams[target_stream]
-        s.send(message.encode('utf-8'))
+        s.send(message, topic=topic)
         return True
 
     def recv(self):
@@ -71,13 +76,13 @@ class Controller:
         message = r.get_stream().recv()
         return message
 
-    def recv_from(self, target_stream, message):
+    def recv_from(self, target_stream):
         r = self.streams[target_stream]
-        message = r.recv()
+        message = r.get_socket().recv()
         return message
 
     def recv_snapshot(self, timeout=POLLER_TIMEOUT):              
         streams = dict(self.poller.poll(timeout))
-        for stream in streams:
-            yield stream # Should check on the performance of this.
-        return None
+        #for stream in streams:
+            #yield stream # Should check on the performance of this.
+        return streams

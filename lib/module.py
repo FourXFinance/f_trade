@@ -8,14 +8,18 @@ from enums import AcceptableKlineValues
 
 class Node:
     enabled = False
-    def __init__(self, name, id=None):
+    def __init__(self, system_name, name, id=None):
+        self.system_name = system_name
         self.context = zmq.Context()
         self.name = name
         self.upstream_controller = Controller()
         self.downstream_controller = Controller()
         self.executive_controller = Controller()
         self.logging_controller = Controller()
+        self.heartbeat_controller = Controller()
+        #TODO: Add Heartbeat
         signal.signal(signal.SIGINT, self.shutdown)
+        
 
     def add_upstream(self, name, port, type, topic="0", bind=False, register=False):
         self.upstream_controller.add_stream(name, port, type, topic, bind, register)
@@ -32,8 +36,12 @@ class Node:
     def recv(self):
         return self.upstream_controller.recv()
 
-    def send(self):
-        return self.downstream_controller.send()
+    def recv_from(self,stream_name):
+        return self.upstream_controller.recv_from(stream_name)
+
+    def send_to(self, stream_name, message, topic="0"):
+        #TODO: Iterate through all controllers to find target stream
+        return self.downstream_controller.send_to(stream_name, message, topic)
 
     def consume_next(self):
         return self.upstream_controller.consume_next()
@@ -50,47 +58,39 @@ class Node:
     def shutdown(self, sig, frame):
         print("Safe Shutdown Process")
         sys.exit(0)
-    def heartbeat():
-        pass
+
+    def heartbeat(self):
+        # TODO: Handle Heartbeat with Callbacks! - Coming Soon!!!
+        return "Beep!"
 
 class Algorithm(Node):
-    def __init__(self, name, ticker, topic, upstream_port, downstream_port, nobind=False):
-        super().__init__(name)
+    def __init__(self, system_name, ticker):
+        self.ticker = ticker
+        super().__init__(system_name, self.name)
+        self.setup()
+        # Algorithms should have HWM set to 1!
     def load_config(self):
         try:
-            with open("config/generated.json") as config:
-                raw_config = json.load(config)
+            with open("config/generated/" + self.system_name + "/algorithm/" + self.ticker + "/" + self.name + ".json") as config:
+                self.config_raw = json.load(config)
+                
+                print(self.config_raw)
         except FileNotFoundError:
             print("Algorithm Config Is Missing!")
-        pass
-    def add_data_clock(self, port, name):
-        self.data_controller.add_stream(name, port, type=zmq.SUB)
 
-    def remove_data_clock(self, name):
-        # TODO: Close the connection properly.
-        pass
-
-    def recv_config_data(self):
-        pass
-
-    def recv_ready_signal(self):
-        pass
-
-    def recv_all_data(self):
-        pass
-
-    def recv_data(self, clock=AcceptableKlineValues.KLINE_INTERVAL_RT):
-        # Pull it from the correct data port
-        pass
-
-    def reload_config(self):
-        # self.clean()
-        # self.disable
+    def setup(self):
         self.load_config()
-        # self.enable
-    def setup():
-        raise Exception("Override Me!")
+        self.configure()
 
+    def configure(self):
+        self.upstream_controller.add_stream("DATA", 
+            self.config_raw["algorithm_port"], 
+            zmq.SUB)
+
+        self.downstream_controller.add_stream("PROXY", 
+            self.config_raw["proxy_port"], 
+            zmq.PUB)
+        
     def run():
         raise Exception("Override Me!")
 
@@ -105,15 +105,47 @@ class Algorithm(Node):
 
 
 class Proxy(Node):
-    def __init__(self, name, id):
-        super().__init__(name, id=id)
-    def run(self):
-        return super().run()
+    #TODO: Proxies should be more generic
+    def __init__(self, system_name, ticker_name):
+        self.name = "PROXY"
+        self.ticker_name = ticker_name
+        super().__init__(system_name,self.name)
+        self.setup()
 
-class Market(Node):
-    def __init__(self, name, id):
-        super().__init__(name, id)
-    def connect_to_market():
-        pass
-    def load_config():
-        pass
+    def setup(self):
+        self.load_config()
+        self.setup_upstream()
+        self.setup_downstream()
+
+    def load_config(self):
+        try:
+            with open("config/generated/" + self.system_name + "/proxy/" + self.ticker_name + ".json") as config:
+                raw_credentials = json.load(config)
+                print(raw_credentials)
+                self.config = raw_credentials
+        except FileNotFoundError:
+            print("config/generated/" + self.system_name + "/proxy/" + self.market_name + ".json")
+            raise FileNotFoundError
+
+    def setup_upstream(self):
+        algorithm_proxy_port = self.config["algorithm_proxy_port"]
+        self.upstream_controller.add_stream( 
+                            "UP",
+                            algorithm_proxy_port,
+                            zmq.XSUB,
+                            bind=True,
+                            register=False
+                        )
+        
+
+    def setup_downstream(self):
+        account_proxy_port = self.config["account_proxy_port"]
+        self.downstream_controller.add_stream( 
+                            "DOWN",
+                            account_proxy_port,
+                            zmq.XPUB,
+                            bind=True,
+                            register=False
+                        )
+    def run(self):
+        zmq.proxy(self.upstream_controller.get_stream("UP").get_socket(), self.downstream_controller.get_stream("DOWN").get_socket())

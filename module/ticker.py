@@ -1,68 +1,93 @@
-import sys
-sys.path.insert(1, 'lib')
+from sys import path,argv
+path.insert(1, 'lib')
 from module import Node
 import zmq
 import json
 import time
+import pandas as pd
+from ast import literal_eval
+from enums import AcceptableKlineValues, Sleep
+import os
 class Ticker(Node):
-    def __init__(self, ticker, upstream_root, downstream_root, enabled_clocks) -> None:
-        super().__init__("Ticker." + ticker)
-        self.ticker =  ticker
-        self.upstream_root = upstream_root
-        self.downstream_root = downstream_root
-        self.enabled_clocks = enabled_clocks
+    def __init__(self,system_name, ticker_name) -> None:
+        self.name = "Ticker"
+        self.ticker_name = ticker_name
+        super().__init__(system_name, self.name)
+        self.algorithm_config = {}
+    
         self.setup()
     def setup(self):
-        # Add Downstreams
-        self.add_downstream("COMM", 4100 + 0, zmq.SUB, "0", bind=False, register=True)
-        self.add_downstream("DATA", self.downstream_root + 1, zmq.PUB, "0", bind=True, register=False)
-        # Add Upstreams ( Upstreams are on a poller)
-        for i in range(0, len(self.enabled_clocks),1):
-            ec  = self.enabled_clocks[i]
-            self.add_upstream(ec, self.upstream_root + i + 1, zmq.SUB, "0", bind=False, register=True)
+        self.load_config()
+        self.setup_upstream()
+        self.setup_downstream()
+
+    def load_config(self):
+        try:
+            with open("config/generated/" + self.system_name + "/ticker/" + self.ticker_name + ".json") as config:
+                raw_credentials = json.load(config)
+                print(raw_credentials)
+                self.config = raw_credentials
+        except FileNotFoundError:
+            print("config/generated/" + self.system_name + "/market/" + self.market_name + ".json")
+            raise FileNotFoundError
+
+        for filename in os.listdir(os.getcwd() + "/config/generated/" + self.system_name + "/algorithm/" + self.ticker_name):
+            with open(os.path.join(os.getcwd() + "/config/generated/" + self.system_name + "/algorithm/"  + self.ticker_name + "/" + filename), 'r') as config:
+                raw_config = json.load(config)
+                self.algorithm_config[raw_config["algorithm_name"]] = raw_config
+        print(self.algorithm_config)
+
+    def setup_upstream(self):
+        required_sources = self.config["required_sources"]
+        for market in required_sources:
+            for interval in required_sources[market]:
+                port = required_sources[market][interval]
+                self.upstream_controller.add_stream( 
+                            interval,
+                            port,
+                            zmq.SUB,
+                            bind=False,
+                            register=True
+                        )
+
+    def setup_downstream(self):
+        self.downstream_controller.add_stream( 
+                            "DATA",
+                            self.config["algorithm_port"],
+                            zmq.PUB,
+                            bind=True,
+                            register=False
+                        )
+            
+    def disable_algorithm(self):
+        pass
+    def enable_algorithm(self):
+        pass
+    def clean_all(self):
+        pass
+    def clean_algorithm(self):
+        pass
     def run(self):
         while True:
-            us_snapshot = self.upstream_controller.poll()
-            # Process Upstream Connections
-            print (us_snapshot)
-            ds_snapshot = self.downstream_controller.poll()
-            # Process Downstream. Why would you poll a downstream? - Sub
-            print (ds_snapshot)
+            upstreams = self.upstream_controller.get_streams()
+            upstream_socket_map = {}
+            for stream in upstreams.keys():
+                #print(all_streams[stream])
+                #print(all_streams[stream].name)
+               upstream_socket_map[upstreams[stream].get_socket()] = upstreams[stream].name
 
-            time.sleep(0.5)
+            for stream in self.upstream_controller.recv_snapshot():
+                #We have a dictionary of streams. Which one do we have
+                input_stream = upstream_socket_map[stream]
+                raw_data = stream.recv().decode('UTF-8')
+                data = {'topic': raw_data[:1], 'message':raw_data[1:]}
+                message = pd.read_json(data["message"])
+                print(message)
+                self.downstream_controller.send_to("DATA", message.to_json())
+            time.sleep(1)
 
 if __name__ == "__main__":
-    ticker, upstream_root, downstream_root = None, None, None
-    try:
-        ticker = sys.argv[1]
-    except IndexError as IE:
-        print("No Ticker Provided")
-        sys.exit(-1)
-    
-    try:        
-        upstream_root = int(sys.argv[2])
-    except IndexError as IE:
-        print("No Upstream Root Provided")
-        sys.exit(-1)
-    except ValueError as VE:
-        print("Upstream Root is not a number")
-        sys.exit(-1)
-
-    try:        
-        downstream_root = int(sys.argv[3])
-    except IndexError as IE:
-        print("No Downstream Root Provided")
-        sys.exit(-1)
-    except ValueError as VE:
-        print("Downstream Root is not a number")
-        sys.exit(-1)
-
-    enabled_clocks = sys.argv[4:]
-    if enabled_clocks == []:
-        enabled_clocks= ["RT", "1M", "5M"]
-        print("No Clocks provided. Using: " + ", ".join(enabled_clocks))
-
-    T = Ticker(ticker, upstream_root, downstream_root, enabled_clocks)
+    T = Ticker(str(argv[1]), str(argv[2]))
     T.run()
 
 

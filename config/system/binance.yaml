@@ -1,0 +1,58 @@
+---
+system:
+  name: F_Trader Binance
+  test: True
+  logs: True
+  version: 3
+  base_market_port: 3000
+  base_market_offset: 100
+  base_ticker_port: 4000
+  base_ticker_offset: 100
+  max_supported_algorithms_per_ticker: 50 # 0 -> 49
+  base_algorithm_port: 5000
+  algorithm_offset: 1
+  algorithm_proxy_offset: 50
+  account_offset: 51
+  broker_proxy_port: 6000
+  trader_proxy_port: 7000
+  trader_enabled: False
+  logger_port: 10000
+  logger_proxy_port: 9000
+  viewer: False
+  viewer_port: 11000
+markets:
+- name: Binance
+  enabled: True
+  enabled_tick_sources:
+  - RT
+  - 1m
+  - 3m
+  - 5m
+tickers:
+- name: "DOGEEUR"
+  enabled: True
+  algorithms:
+  - name: scalp
+    enabled: True
+    config:
+      window: 10
+      target_growth: 1.04
+  - name: scalp_low
+    enabled: True
+    config:
+      window: 10
+      target_growth: 1.04
+- name: "SHIBEUR"
+  enabled: True
+  algorithms:
+  - name: always_buy
+    enabled: True
+  - name: scalp
+    enabled: True
+    config:
+      window: 5
+      target_growth: 1.03
+
+    
+      
+     

@@ -2,192 +2,565 @@
 use strict;
 use warnings;
 use YAML::XS 'LoadFile';
+use JSON;
 use Data::Dumper;
+use Term::ANSIColor;
+use Cwd;
+use Storable 'dclone';
 
+print "Error: Root Permissions Required\n" unless not $>;
+exit (-1) unless not $>;
+# TODO: These functions should probably be in a more reusable module, but Perl modules suck
+sub ping_node {
+    my $target_node = shift;
+    print color('green');
+    # This is not just for look. Some Time needed to allow the system to start up.
+    system("sleep 0.1");
+    print(".");
+    system("sleep 0.1");
+    print(".");
+    system("sleep 0.1");
+    print(".");
+    system("sleep 0.1");
+    print color('bold green');
+    print("\t✓\n");
+}
+die "System Name not provded" unless @ARGV;
 my ($system_name) = lcfirst shift;
 
 if (not defined $system_name) {
     die "System Name not provided";
 }
 my $config;
+my $system_config = {};
+my $ticker_config = {};
+my $algorithm_config = {};
+my $proxy_config = {};
+my $account_config = {};
+#my $trader_config = {};
+my $manager_config = {};
 eval  {
-    $config = LoadFile("config/$system_name.yaml");
+    $config = LoadFile("config/system/$system_name.yaml");
     1;
 } or do {
     my $error = $@ || "Zombie Error";
     die "Error Loading System Config: $error";
 };
 
-my $system_data = delete $config->{system};
-die "No System Data Found" unless $system_data;
-
-my $module_data = delete $config->{modules};
-die "No Module Data Found" unless $module_data;
-
-my $ticker_data = delete $config->{tickers};
-die "No Ticker Data Found" unless $ticker_data;
-
-my $proxy_data = delete $config->{proxies};
-die "No Proxy Data Found" unless $proxy_data;
+my $step_count = 1;
+my $sub_count = 1;
+my $sub_sub_count = 1;
+my $node_delay = 0.3;
+my $f = "%-30s%-30s\n";
 
 
-$system_name = ucfirst $system_name;
+my $cur_dir = getcwd;
+system("perl $cur_dir/scripts/shutdown.pl");
+# Validate System Config
+$system_config= $config->{system};
+#print color('bold magenta');
+printf("$f", "Error:" , "No System Entry Defined") and die ("Startup Error")unless $system_config;
+my $config_name = $system_config->{name};
 
-# System Wide Data
-my $version = $system_data->{version};
-die "No System Version Specified" unless $system_data;
+printf("$f", "Warn:" , "No System Name Defined") unless $config_name;
+$config_name ||= "UNDEFINED";
+printf("$f", "System Name:" , $config_name);
+my $test_mode = $system_config->{test} // "False";
+printf("$f", "Test Mode:" , $test_mode);
 
-my $test_mode = defined $system_data->{test} and $system_data->{test} eq "False" ? 1 : undef;
-warn "No Test Mode found, Assuming False" unless $system_data;
+my $logs_enabled = $system_config->{logs} // "False";
+printf("$f", "Logs Enabled:" , $logs_enabled);
 
-my $algorithm_base_port = $system_data->{algorithm_base_port};
-die "No Algorithm Base Port Specified" unless $algorithm_base_port;
+my $viewer_enabled = $system_config->{viewer} // "False";
+printf("$f", "Viewer Enabled:" , $viewer_enabled);
 
-my $algorithm_port_increment = defined $system_data->{algorithm_port_increment} ? $system_data->{algorithm_port_increment} : undef;
-warn "No Algorithm Increment found, Assuming 100" unless $algorithm_port_increment;
-$system_data->{algorithm_port_increment} ||= 100;
+my $base_market_port = $system_config->{base_market_port};
+printf("$f", "Error:" , "No Base Market Port Defined") and die ("Startup Error") unless $base_market_port;
 
-my $algorithm_proxy_offset = $system_data->{algorithm_proxy_offset};
-die "No Algorithm Proxy Offset Specified" unless $algorithm_proxy_offset;
+my $base_market_offset = $system_config->{base_market_offset};
+printf("$f", "Error:" , "No Base Market Offset Defined") and die ("Startup Error") unless $base_market_offset;
 
-my $algorithm_account_offset = $system_data->{algorithm_account_offset};
-die "No Algorithm Account Offset Specified" unless $algorithm_account_offset;
+my $base_ticker_port = $system_config->{base_ticker_port};
+printf("$f", "Error:" , "No Base Ticker Port Defined") and die ("Startup Error") unless $base_ticker_port;
 
-my $account_broker_port = $system_data->{account_broker_port};
-die "No Account Broker Port Specified" unless $account_broker_port;
+my $base_ticker_offset = $system_config->{base_ticker_offset};
+printf("$f", "Error:" , "No Base Ticker Offset Defined") and die ("Startup Error") unless $base_ticker_offset;
 
-my $log_proxy_port = $system_data->{log_proxy_port};
-die "No Log Proxy Port Found" unless $log_proxy_port;
+my $base_algorithm_port = $system_config->{base_algorithm_port};
+printf("$f", "Error:" , "No Base Algorithm Port Defined") and die ("Startup Error") unless $base_algorithm_port;
 
-my $log_port = $system_data->{log_port};
-die "No Log Port Found" unless $log_port;
+my $algorithm_offset = $system_config->{algorithm_offset};
+printf("$f", "Error:" , "No Algorithm Offset Defined") and die ("Startup Error") unless $algorithm_offset;
 
-print "Loading Config for $system_name Version: $version\n";
-print "Test Mode: $test_mode\n";
+my $algorithm_proxy_offset = $system_config->{algorithm_proxy_offset};
+printf("$f", "Error:" , "No Algorithm Proxy Offset Defined") and die ("Startup Error") unless $algorithm_proxy_offset;
 
-my $market;
+my $account_offset = $system_config->{account_offset};
+printf("$f", "Error:" , "No Account Offset Defined") and die ("Startup Error") unless $account_offset;
 
-my $module_config;
-my $ticker_config;
-my $algorithm_config;
-my $proxy_config;
+my $logger_port = $system_config->{logger_port};
+printf("$f", "Error:" , "No Logger Port Defined") and die ("Startup Error") unless $logger_port;
 
-# Startup Process
-# 1. Validate Configs
-# 1.5 Build Log Node
-# 2. Build Market Config
-# 3. Build Ticker Nodes (With Assoicated Algorithms)
-# 4. Build Proxies
-# 5. Build Outstanding Nodes
-# 6. Build Market Sources
-# 7. Build Broker
-# 8. Build Traders
-# 9. Build Executive
-# 10. Start The System!
-foreach (@$module_data) {
-    
-    my $module_name = $_->{name};
-    die "No Module Name Defined" unless $module_name;
+my $broker_proxy_port = $system_config->{broker_proxy_port};
+printf("$f", "Error:" , "No Broker Proxy Port Defined") and die ("Startup Error") unless $broker_proxy_port;
 
-    if ($module_name eq "market") {
-        $market = $_; 
-        next;
+my $trader_proxy_port = $system_config->{trader_proxy_port};
+printf("$f", "Error:" , "No Trader Proxy Port Defined") and die ("Startup Error") unless $trader_proxy_port;
+
+printf("$f", "Base Ticker Port (Offset):" , $base_ticker_port." (".$base_ticker_offset.")");
+
+
+my $markets = $config->{markets};
+printf("$f", "Error:" , "No Markets Defined") and die ("Startup Error") unless $markets;
+
+
+printf("$f", "Step $step_count:" , "Checking Market Configurations");
+my $current_ticker_port = $base_ticker_port;
+my $current_algorithm_port = $base_algorithm_port;
+my $current_market_base = $base_market_port;
+my $current_algorithm_proxy_port = $base_algorithm_port + $algorithm_proxy_offset;
+my $market_config = {};
+for my $market (@$markets) {
+    my $current_market_port = $current_market_base;
+    my $market_enabled = $market->{enabled};
+    next if $market_enabled eq "False";
+    my $market_name = lc $market->{name};
+    my $temp = $market->{enabled_tick_sources};
+    my $market_socket_bindings = {};
+
+    my @market_tick_sources = ();
+    for my $tick (@$temp) { 
+        push @market_tick_sources, $tick;
+        $market_socket_bindings->{$tick} = $current_market_port;
+        $current_market_port +=1;
     }
-
-    my $ds = $_->{downstream};
-    my @module_downstream = ();
-    
-    foreach my $downstream (@$ds){
-        my $ds_name = $downstream->{name};
-        die "$module_name Downstream - No Port Name Defined" unless $ds_name;
-        my $ds_port = $downstream->{port};
-        die "$module_name No Port Defined For $ds_name" unless $ds_port;
-        my $ds_type = $downstream->{type};
-        my $ds_bind = $downstream->{bind} // "False";
-        push @module_downstream, {  name => $ds_name,
-                                    port => $ds_port,
-                                    type => $ds_type,
-                                    bind => $ds_bind
-                                    };
+    $market_config->{$market_name} = {
+        name => $market_name,
+        sources => $market_socket_bindings,
+        tracked_tickers => []
     };
-    my @module_upstream = ();
-    my $us = $_->{upstream};
-     foreach my $upstream (@$us){
-        my $us_name = $upstream->{name};
-        die "$module_name Upstream - No Port Name Defined" unless $us_name;
-        my $us_port = $upstream->{port};
-        die "$module_name No Port Defined For $us_name" unless $us_port;
-        my $us_type = $upstream->{type};
-        my $us_bind = $upstream->{bind} // "False";
-        push @module_upstream, {    name => $us_name,
-                                    port => $us_port,
-                                    type => $us_type,
-                                    bind => $us_bind
-                                    };
-    };
-    $module_config->{$module_name} = {
-        name => $module_name,
-        downstream => \@module_downstream,
-        upstream => \@module_upstream,
-    };
+    $current_market_base += $base_market_offset;
+    printf("$f", "Step $step_count.$sub_count:" , "Market '$market_name' has valid Configuration");
+    $sub_count+=1;
 }
-print Dumper($module_config);
-die "No Market Module Defined" unless $market;
+$sub_count=1;
+$step_count+=1;
 
-my $current_port_address = $algorithm_base_port;
-foreach (@$ticker_data) {
-    my $ticker_name = $_->{name};
-    my $supported_ticks = $_->{supported_ticks};
-    my $enabled = $_->{enabled};
-    next unless defined $enabled and $enabled;
-    my $ticker_algorithms = $_->{algorithms};
+my $tickers = $config->{tickers};
+printf("$f", "Error:" , "No Tickers Defined") and die ("Startup Error") unless $tickers;
 
-    # Pass all the required algorithm nodes
-    foreach my $algorithm (@$ticker_algorithms) {
-        my $a_name = $algorithm->{name};
-        my $enabled = $algorithm->{enabled};
-        next unless defined $enabled and $enabled;
-        my $parameters = $algorithm->{parameters};
-        if (defined $algorithm_config->{$ticker_name} and defined $algorithm_config->{$ticker_name}->{$a_name}) {
-            die "$ticker_name has two or more entries for $a_name";
+printf("$f", "Step $step_count:" , "Checking Ticker Configuration");
+my $ticker_count = 0;
+my $topic = 0;
+for my $ticker (@$tickers) {
+    my $ticker_enabled = $ticker->{enabled};
+    next if $ticker_enabled eq "False";
+    my $ticker_name = $ticker->{name};
+    my $ticker_algorithms = $ticker->{algorithms};
+    my $required_sources = {};
+    if (not defined $ticker->{required_data}) {
+        foreach my $key (keys % {$market_config}){
+            $required_sources->{$key} = dclone $market_config->{$key}->{sources};
+            foreach(keys %{$required_sources->{$key}}) {
+                # print($base_ticker_offset * $ticker_count);
+                # This can 100% be done better
+                $required_sources->{$key}->{$_} += ($base_ticker_port - $base_market_port) + ($base_ticker_offset * $ticker_count);
+            }
         }
-        $algorithm_config->{$ticker_name}->{$a_name} = {
-            name => $a_name,
-            parameters => $parameters,
-            upstream => [{
-                port => $current_port_address,
-                bind => "False",
-                type => "SUB",
-                name => "$ticker_name.$a_name.UP"
-            }],
-            downstream => [{
-                port => $current_port_address + $algorithm_proxy_offset,
-                bind => "False",
-                type => "PUB",
-                name => "$ticker_name.$a_name.DOWN"
-            }]
-        };
+    } else {
+        #TODO Handle Custom Tick Sources.
     }
-    $proxy_config->{"$ticker_name.proxy"} = {
-            name => "$ticker_name.proxy",
-            upstream => [{
-                port => $current_port_address + $algorithm_proxy_offset,
-                bind => "True",
-                type => "XSUB"
-            }],
-            downstream => [{
-                port => $current_port_address + $algorithm_account_offset,
-                bind => "True",
-                type => "XPUB"
-            }]
-        };
+    #print(Dumper($required_sources)."\n");
     $ticker_config->{$ticker_name} = {
-        name => $ticker_name
+        name => $ticker_name,
+        upstream_root_port => $current_ticker_port,
+        required_sources => $required_sources,
+        algorithm_port => $current_algorithm_port,
     };
-    
-    $current_port_address+=$algorithm_port_increment;
+    #TODO: Handle Different Markets with Different Tickers
+    push @{$market_config->{'binance'}->{tracked_tickers}}, {$ticker_name => $topic};
+    $topic+=1;
+    # my $current_algorithm_port = $current_ticker_port;
+    printf("$f", "Step $step_count.$sub_count:" , "Checking Algorithm Configuration for $ticker_name");
+    for my $algorithm (@$ticker_algorithms){
+        my $algorithm_enabled = $algorithm->{enabled};
+        next if $algorithm_enabled eq "False";
+        my $algorithm_name = $algorithm->{name};
+        my $config = $algorithm->{config};
+        if (defined $algorithm_config->{$ticker_name} and defined $algorithm_config->{$ticker_name}->{$algorithm_name}) {
+            printf("$f", "Error:" , "Algorithm $algorithm_name already defined for $ticker_name") and die ("Startup Error")
+        }
+        $algorithm_config->{$ticker_name}->{$algorithm_name} = {
+            algorithm_port => $current_algorithm_port, #TODO: Figure out what to do with this?
+            algorithm_name => $algorithm_name,
+            configuration_options => $config,
+            proxy_port => $current_algorithm_proxy_port
+        };
+        # $current_algorithm_port+=1;
+    }
+    $proxy_config->{$ticker_name} = {
+        algorithm_proxy_port => $current_algorithm_port + $algorithm_proxy_offset,
+        account_proxy_port => $current_algorithm_port + $account_offset,
+    };
+    $account_config->{$ticker_name} = {
+        account_proxy_port => $current_algorithm_port + $account_offset,
+        broker_proxy_port => $broker_proxy_port,
+    };
+    $sub_count+=1;
+    $current_algorithm_proxy_port += $base_ticker_offset;
+    $current_ticker_port += $base_ticker_offset;
+    $current_algorithm_port += $base_ticker_offset;
+    $ticker_count +=1;
+}
+$sub_count=1;
+# print(Dumper($algorithm_config));
+# print(Dumper($ticker_config));
+# print(Dumper($market_config));
+# printf("$f", "Success:" , "System Config is Valid");
+# Create Perl Dictionaries of each object
+
+# If Valid, Delete old configs
+qx\rm -rf ./config/generated\;
+qx\mkdir ./config/generated/\;
+qx\mkdir ./config/generated/$system_name\;
+# if ($? >> 8) {
+#     printf("$f", "WARN:" , "It seems an old instance of the system config exists. Deleting");
+#     qx\rm -rf ./config/generated/$system_name/\;
+#     qx\mkdir ./config/generated/$system_name\;
+# }
+
+$step_count+=1;
+printf("$f", "Step $step_count:" , "Creating F_Trader System");
+printf("$f", "Step $step_count.$sub_count:" , "Writting Node Configs");
+
+# Build Market Configs
+qx\mkdir ./config/generated/$system_name/market/\;
+for my $market_name  (keys %$market_config) {
+    my $market = $market_config->{$market_name};
+    my $json = encode_json $market;
+    qx\touch ./config/generated/$system_name/market/$market_name.json\;
+    open(FH, '>', "./config/generated/$system_name/market/$market_name.json") or die $!;
+    print FH $json;
+    close(FH);
 }
 
 
-# Output Generated Config Files
-print Dumper($algorithm_config);
+# Build Ticker Configs
+qx\mkdir ./config/generated/$system_name/ticker/\;
+for my $module_name  (keys %$ticker_config) {
+    my $module = $ticker_config->{$module_name};
+    my $json = encode_json $module;
+    qx\touch ./config/generated/$system_name/ticker/$module_name.json\;
+    open(FH, '>', "./config/generated/$system_name/ticker/$module_name.json") or die $!;
+    print FH $json;
+    close(FH);
+}
+
+# Build Algorithm Configs
+qx\mkdir ./config/generated/$system_name/algorithm/\;
+for my $ticker_name  (keys %$algorithm_config) {
+    qx\mkdir ./config/generated/$system_name/algorithm/$ticker_name/\;
+    for my $algorithm_name (keys %{$algorithm_config->{$ticker_name}}) {
+        my $algorithm = $algorithm_config->{$ticker_name}->{$algorithm_name};
+        my $json = encode_json $algorithm;
+        qx\touch ./config/generated/$system_name/algorithm/$ticker_name/$algorithm_name.json\;
+        open(FH, '>', "./config/generated/$system_name/algorithm/$ticker_name/$algorithm_name.json") or die $!;
+        print FH $json;
+        close(FH);
+    }
+}
+
+# Build Proxy Configs
+qx\mkdir ./config/generated/$system_name/proxy/\;
+for my $proxy_name  (keys %$proxy_config) {
+    my $proxy = $proxy_config->{$proxy_name};
+    my $json = encode_json $proxy;
+    qx\touch ./config/generated/$system_name/proxy/$proxy_name.json\;
+    open(FH, '>', "./config/generated/$system_name/proxy/$proxy_name.json") or die $!;
+    print FH $json;
+    close(FH);
+}
+
+# Build Account Configs
+qx\mkdir ./config/generated/$system_name/account/\;
+for my $account_name  (keys %$account_config) {
+    my $account = $account_config->{$account_name};
+    my $json = encode_json $account;
+    qx\touch ./config/generated/$system_name/account/$account_name.json\;
+    open(FH, '>', "./config/generated/$system_name/account/$account_name.json") or die $!;
+    print FH $json;
+    close(FH);
+}
+
+# Build Broker Configs
+qx\mkdir ./config/generated/$system_name/broker/\;
+my $broker_config = {
+    broker_proxy_port => $broker_proxy_port,
+    trader_proxy_port => $trader_proxy_port
+};
+my $json = encode_json $broker_config;
+qx\touch ./config/generated/$system_name/broker/$system_name.json\;
+open(FH, '>', "./config/generated/$system_name/broker/$system_name.json") or die $!;
+print FH $json;
+close(FH);
+
+
+# Build Trader Configs
+qx\mkdir ./config/generated/$system_name/trader/\;
+my $trader_config = {
+    trader_proxy_port => $trader_proxy_port
+};
+$json = encode_json $trader_config;
+qx\touch ./config/generated/$system_name/trader/$system_name.json\;
+open(FH, '>', "./config/generated/$system_name/trader/$system_name.json") or die $!;
+print FH $json;
+close(FH);
+
+
+# Build Manager Configs # A BETTER WAY TO DO THIS IS TO GET THE MANAGER NODE TO READ FROM Market configs as well as ticker configs.
+# And This is exactly what I intend to do.
+# print (Dumper($market_config));
+# qx\mkdir ./config/generated/$system_name/manager/\;
+# qx\touch ./config/generated/$system_name/manager/manager.json\;
+
+
+# Generate System Config.
+# This lists all nodes and all connections they have. Essentially aggregating it all together. This provides a snapshot of the system
+$sub_count+=1;
+# Startup Order:
+# Create Markets
+# Create 
+# Create Tickers
+# Add Algorithms to Tickers
+# Create Accounts
+
+# Startup each module, they will load data from configs
+
+# TODO: Check if We want to overwrite the old configs
+$sub_count=1;
+$step_count+=1;
+print color('white');
+printf("$f", "Step $step_count" , "Starting Up F_Trader System");
+ # How Does the system start up? Quite Simple.
+
+ # 1. Start a module
+ # TODO 2. Ping a module for liveliness using ping.pl
+
+#print (Dumper($market_config));
+print color('bold yellow');
+print("Starting Market Nodes\n");
+foreach (keys %$market_config) {
+    my $market_name = $_;
+    my $market_sources = $market_config->{$_}->{sources};
+    
+    foreach (keys %$market_sources) {
+        #print ($cur_dir."/module/system/$market_name/market.py \n");
+        print color('bold blue');
+        print("Starting: $market_name ($_) ");
+        my $pid=fork(); # TODO: Yea, We fork the current process and create a new one. But we do not assign 'new' file handlers
+	    die "Cannot fork: $!" if (! defined $pid);
+        if (! $pid) {
+		# Only the child does this\
+            eval{
+                #TODO: Explain What is going onhere
+                exec("python3 $cur_dir/module/system/$market_name/market.py $system_name $market_name $_ >> /dev/$$\_1 2>> /dev/$$\_2 &");
+                exit(); # < Technically not possible to reach
+                # NO EXECUTION BELOW THIS POINT!
+            };
+       
+		# Only The Parent Does This.
+	    } else {
+            #print("$pid");
+            # TODO: Communicate with The Node and get a heartbeat back. If unable, Fail
+            # We assume we always pass
+            ping_node();
+        }
+    }
+}
+print color('green');
+print ("All Markets have Started\n");
+
+print color('bold yellow');
+print ("Starting Manager Node\n");
+print color('bold blue');
+        print("Starting: Manager");
+        my $pid=fork(); # TODO: Yea, We fork the current process and create a new one. But we do not assign 'new' file handlers
+	    die "Cannot fork: $!" if (! defined $pid);
+        if (! $pid) {
+		# Only the child does this\
+            eval{
+                #TODO: Explain What is going onhere
+                exec("python3 $cur_dir/module/manager.py $system_name  >> /dev/$$\_1 2>> /dev/$$\_2 &");
+                exit(); # < Technically not possible to reach
+                # NO EXECUTION BELOW THIS POINT!
+            };
+       
+		# Only The Parent Does This.
+	    } else {
+            #print("$pid");
+            # TODO: Communicate with The Node and get a heartbeat back. If unable, Fail
+            # We assume we always pass
+            ping_node();
+        }
+#TODO: Communicate Directly With Node to get Status. Then Move onto next node
+print color('green');
+print ("All Managers have Started\n");
+print color('bold yellow');
+print("Starting Ticker Nodes\n");
+foreach (keys %$ticker_config) {
+    my $ticker_name = $_;
+    print color('bold blue');
+    print("Starting: Ticker ($ticker_name) ");
+        my $pid=fork(); # TODO: Yea, We fork the current process and create a new one. But we do not assign 'new' file handlers
+	    die "Cannot fork: $!" if (! defined $pid);
+        if (! $pid) {
+		# Only the child does this\
+            eval{
+                #TODO: Explain What is going onhere
+                exec("python3 $cur_dir/module/ticker.py $system_name $ticker_name  >> /dev/$$\_1 2>> /dev/$$\_2 &");
+                exit(); # < Technically not possible to reach
+                # NO EXECUTION BELOW THIS POINT!
+            };
+       
+		# Only The Parent Does This.
+	    } else {
+            #print("$pid");
+            # TODO: Communicate with The Node and get a heartbeat back. If unable, Fail
+            # We assume we always pass
+            ping_node();
+        }
+}
+
+print color('green');
+print ("All Tickers have Started\n");
+print color('bold yellow');
+print("Starting Algorithm Nodes\n");
+#print(Dumper($algorithm_config));
+foreach (keys %$algorithm_config) {
+    my $ticker_name = $_;    
+    foreach (keys %{$algorithm_config->{$ticker_name}}) {
+        #print ($cur_dir."/module/system/$market_name/market.py \n");
+        print color('bold blue');
+        print("Starting: Algorithm $ticker_name ($_) ");
+        my $pid=fork(); # TODO: Yea, We fork the current process and create a new one. But we do not assign 'new' file handlers
+	    die "Cannot fork: $!" if (! defined $pid);
+        if (! $pid) {
+		# Only the child does this\
+            eval{
+                #TODO: Explain What is going onhere
+                exec("python3 $cur_dir/algorithm/$_.py $system_name $ticker_name $_ >> /dev/$$\_1  &");
+                exit(); # < Technically not possible to reach
+                # NO EXECUTION BELOW THIS POINT!
+            };
+       
+		# Only The Parent Does This.
+	    } else {
+            #print("$pid");
+            # TODO: Communicate with The Node and get a heartbeat back. If unable, Fail
+            # We assume we always pass
+            ping_node();
+        }
+    }
+}
+print color('green');
+print ("All Algorithms have Started\n");
+print color('bold yellow');
+print("Starting Algorothm Proxy Nodes\n");
+
+foreach (keys %$proxy_config) {
+    my $ticker_name = $_;
+    print color('bold blue');
+    print("Starting: Proxy ($ticker_name) ");
+        my $pid=fork(); # TODO: Yea, We fork the current process and create a new one. But we do not assign 'new' file handlers
+	    die "Cannot fork: $!" if (! defined $pid);
+        if (! $pid) {
+		# Only the child does this\
+            eval{
+                #TODO: Explain What is going onhere
+                exec("python3 $cur_dir/module/util/proxy.py $system_name $ticker_name  >> /dev/$$\_1  &");
+                exit(); # < Technically not possible to reach
+                # NO EXECUTION BELOW THIS POINT!
+            };
+       
+		# Only The Parent Does This.
+	    } else {
+            #print("$pid");
+            # TODO: Communicate with The Node and get a heartbeat back. If unable, Fail
+            # We assume we always pass
+            ping_node();
+        }
+}
+print color('green');
+print ("All Algorithm Proxies have Started\n");
+print color('bold yellow');
+print("Starting Account Nodes\n");
+foreach (keys %$account_config) {
+    my $ticker_name = $_;
+    print color('bold blue');
+    print("Starting: Account ($ticker_name) ");
+        my $pid=fork(); # TODO: Yea, We fork the current process and create a new one. But we do not assign 'new' file handlers
+	    die "Cannot fork: $!" if (! defined $pid);
+        if (! $pid) {
+		# Only the child does this\
+            eval{
+                #TODO: Explain What is going onhere
+                exec("python3 $cur_dir/module/system/$system_name/account.py $system_name $ticker_name  >> /dev/$$\_1  &");
+                exit(); # < Technically not possible to reach
+                # NO EXECUTION BELOW THIS POINT!
+            };
+       
+		# Only The Parent Does This.
+	    } else {
+            #print("$pid");
+            # TODO: Communicate with The Node and get a heartbeat back. If unable, Fail
+            # We assume we always pass
+            ping_node();
+        }
+}
+print color('green');
+print ("All Accounts have Started\n");
+print color('bold yellow');
+print("Starting Broker\n");
+$pid=fork(); # TODO: Yea, We fork the current process and create a new one. But we do not assign 'new' file handlers
+die "Cannot fork: $!" if (! defined $pid);
+print("Starting: Broker ($system_name) ");
+if (! $pid) {
+# Only the child does this\
+    eval{
+        #TODO: Explain What is going onhere
+        exec("python3 $cur_dir/module/broker.py $system_name   >> /dev/$$\_1  &");
+        exit(); # < Technically not possible to reach
+        # NO EXECUTION BELOW THIS POINT!
+    };
+
+# Only The Parent Does This.
+} else {
+    #print("$pid");
+    # TODO: Communicate with The Node and get a heartbeat back. If unable, Fail
+    # We assume we always pass
+    ping_node();
+}
+print("Starting Trader\n");
+$pid=fork(); # TODO: Yea, We fork the current process and create a new one. But we do not assign 'new' file handlers
+die "Cannot fork: $!" if (! defined $pid);
+print("Starting: Trader ($system_name) ");
+if (! $pid) {
+# Only the child does this\
+    eval{
+        #TODO: Explain What is going onhere
+        exec("python3 $cur_dir/module/system/$system_name/trader.py $system_name   >> /dev/$$\_1  &");
+        exit(); # < Technically not possible to reach
+        # NO EXECUTION BELOW THIS POINT!
+    };
+
+# Only The Parent Does This.
+} else {
+    #print("$pid");
+    # TODO: Communicate with The Node and get a heartbeat back. If unable, Fail
+    # We assume we always pass
+    ping_node();
+}
+print color('green');
+print ("All Brokers And Traders have Started\n");
+print color('green');
+print ("F_Trader ($system_name) is Online\n");
