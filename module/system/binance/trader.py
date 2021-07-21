@@ -1,3 +1,4 @@
+from math import acos
 import sys
 sys.path.insert(1, 'lib')
 from module import Node
@@ -51,10 +52,17 @@ class BinanceTrader(BinanceNode):
             try:
                 raw_data = self.recv_from("DATA").decode('UTF-8')
                 data = {'topic': raw_data[:1], 'message':raw_data[1:]}
-                print(data["message"])
-                if data["message"]["result"] == "BUY":
-                    # Let's submit a buy order
-                    pass
+                account_result = json.loads(data["message"])
+                print(account_result)
+                if account_result["trade_type"] == 0b1 << 3:
+                    order = self.client.order_market_buy(
+                    symbol=account_result["symbol"],
+                    quantity=account_result["quantity"])
+
+                    order = self.client.order_limit_sell(
+                    symbol=account_result["symbol"],
+                    quantity=account_result["quantity"],
+                    price=account_result["target_price"])
             except Exception as e:
                 print(e)
             time.sleep(1)

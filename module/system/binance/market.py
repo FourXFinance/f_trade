@@ -33,15 +33,7 @@ class MarketWorker(BinanceNode):
         self.load_config()
         self.setup_downstream()
 
-    def load_secrets(self):
-        try:
-            with open("config/secrets/" + self.system_name + ".json") as secrets:
-                raw_secrets = json.load(secrets)
-                self.API_KEY = raw_secrets["API_KEY"]
-                self.SECRET_KEY = raw_secrets["SECRET_KEY"]
-        except FileNotFoundError:
-            print("No Secrets Found")
-            raise FileNotFoundError
+    
     def load_config(self):
         try:
             with open("config/generated/" + self.system_name + "/market/" + self.market_name + ".json") as config:

@@ -2,6 +2,7 @@ from os import name
 import sys
 sys.path.insert(1, 'lib')
 sys.path.insert(1, 'module/market/binance')
+from enums import TradeType
 from module import Node
 from node import BinanceNode
 import zmq
@@ -12,7 +13,7 @@ from binance import Client, ThreadedWebsocketManager
 import numpy as np
 import pandas as pd
 import math
-
+from binance.enums import *
 
 class Account(BinanceNode):
     ticker_config = {}
@@ -23,6 +24,7 @@ class Account(BinanceNode):
     def __init__(self,system_name, ticker_name,) -> None:
         self.name = "Account"
         self.ticker_name = ticker_name
+        self.lot_size = 25 #Euros
         super().__init__(system_name, self.name)
         self.setup()
 
@@ -30,6 +32,7 @@ class Account(BinanceNode):
         self.load_config()
         self.setup_upstream()
         self.setup_downstream()
+        self.get_ticker_config_from_market()
 
     def load_config(self):
         try:
@@ -61,12 +64,12 @@ class Account(BinanceNode):
                         )
 
     def get_open_orders(self):
-        raw_data = self.client.get_open_orders(symbol=self.ticker)
+        raw_data = self.client.get_open_orders(symbol=self.ticker_name)
         # Do Something with Account Data?
         return raw_data
 
     def get_ticker_config_from_market(self):
-        raw_data = self.client.get_symbol_info(symbol=self.ticker)
+        raw_data = self.client.get_symbol_info(symbol=self.ticker_name)
         filters = raw_data["filters"]
         
         for f in filters:
@@ -81,13 +84,6 @@ class Account(BinanceNode):
             
         pass
 
-    def create_order(self, order):
-        #TODO: Build a valid order by taking in the algorithm's result and 'shaping'
-        # it to be Binance compatible
-        target_sale_price = round(order.target_sale_price, self.precision)
-        # In Future, we should calculate a dynamic lot size
-        # Send Order To Broker
-        pass
 
     def run(self):
         # TODO: Get Clock Signal from Executive!
@@ -96,25 +92,30 @@ class Account(BinanceNode):
         while True:
             raw_data = self.upstream_controller.recv_from("DATA").decode('UTF-8')
             data = {'topic': raw_data[:1], 'message':raw_data[1:]}
-            print("We Got Something")
-            print (data["message"])
-
-            #print(message)
-            try:
-               # Check to see if we have too many open trades or not
-                if self.open_trades >= self.max_open_trades:
-                   orders = self.get_open_orders()
-                   self.open_trades = len(orders)
-                if self.open_trades >= self.max_open_trades:
-                    # Sorry, nothing to do here! We have exausted the maximum number of open trades
-                    # TODO: Log Abandoned Trade
-                    continue
-                else:
-                    # We're In Business
-                    self.downstream_controller.send_to("PROXY", data["message"]);
+            algorithm_result = json.loads(data["message"])
+            if algorithm_result["trade_type"] == 0b1 << 3:
+                # Buy With Sell
+                message = {}
+                message["symbol"] = self.ticker_name
+                price = algorithm_result["ticker_price"] # 0.25
+                quantity = round(self.lot_size / price, self.precision)
+                message["quantity"] =  quantity
+                message["target_price"] = algorithm_result["target_price"]
+                message["trade_type"] = algorithm_result["trade_type"]
+                print(message)
+                self.downstream_controller.send_to("PROXY", json.dumps(message));
+            # Check to see if we have too many open trades or not
+            if self.open_trades >= self.max_open_trades:
+                orders = self.get_open_orders()
+                self.open_trades = len(orders)
+            if self.open_trades >= self.max_open_trades:
+                # Sorry, nothing to do here! We have exausted the maximum number of open trades
+                # TODO: Log Abandoned Trade
+                continue
+            else:
+                # We're In Business
+                self.downstream_controller.send_to("PROXY", json.dumps(data["message"]));
                     
-            except Exception as e:
-                print("Caught Exception: " + str(e))
             time.sleep(1)
             
 if __name__ == "__main__":

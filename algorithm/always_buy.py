@@ -5,6 +5,7 @@ path.insert(1, 'lib')
 from module import Algorithm
 from binance import Client, ThreadedWebsocketManager
 from binance.helpers import round_step_size
+from enums import TradeType
 import json
 import zmq
 import time
@@ -21,6 +22,7 @@ class AlwaysBuy(Algorithm):
     def __init__(self, system_name, ticker) -> None:
         super().__init__(system_name, ticker)
         self.ticker_name = ticker
+        self.test_mode = True
         pass
     def setup_defaults(self):
         pass
@@ -42,17 +44,27 @@ class AlwaysBuy(Algorithm):
         print(message)
         self.downstream_controller.send_to("PROXY", json.dumps(message))
             
-        
-
     def run(self):
         while True:
-            raw_data = self.recv_from("DATA").decode('UTF-8')
-            #print (raw_data)
-            data = {'topic': raw_data[:1], 'message':raw_data[1:]}
-            message = pd.read_json(data["message"])
-            decision = self.check(message)            
-            #print(data["message"])##
-            time.sleep(1) # Let's not be too hasty
+            if not self.test_mode:
+                raw_data = self.recv_from("DATA").decode('UTF-8')
+                #print (raw_data)
+                data = {'topic': raw_data[:1], 'message':raw_data[1:]}
+                message = pd.read_json(data["message"])
+                decision = self.check(message)            
+                #print(data["message"])##
+                time.sleep(1) # Let's not be too hasty
+            else:
+                message = {}
+                
+                message["weight"] = 0
+                message["ticker_name"] = self.ticker_name
+                message["trade_type"] = 0b1 << 3
+                message["ticker_price"] = 0.0000050 # This should come from the Ticker Module!
+                message["target_price"] = 0.55 # This should come from the Ticker Module!
+                print(message)
+                self.downstream_controller.send_to("PROXY", json.dumps(message))
+                time.sleep(1)
             
 
 

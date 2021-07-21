@@ -30,3 +30,7 @@ class Trade(Trade):
     market = "Binance"
     def __init__(self) -> None:
         pass
+
+trade_type_mappings = {
+    
+}

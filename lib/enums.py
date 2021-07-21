@@ -1,6 +1,15 @@
 from enum import Enum
 
 minute = 60 
+
+class TradeType(Enum):
+    BUY = 0b1
+    SELL = 0b1 << 1
+    BUY_WITH_SELL = 0b1 << 2
+    BUY_WITH_OCO = 0b1 << 3
+    SELL_WITH_BUY = 0b1 << 4 #Not sure these are positions we want?
+    CLOSE_ALL = 0b1 << 5 #  In event of an emergency
+
 class AcceptableKlineValues(Enum):
     KLINE_INTERVAL_RT = 'RT' # Special Case for our system
     KLINE_INTERVAL_1MINUTE = '1m' #These are all replicated from python-binance
