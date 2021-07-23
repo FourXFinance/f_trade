@@ -1,0 +1,2 @@
+[dependencies]
+zmq = "0.9"
