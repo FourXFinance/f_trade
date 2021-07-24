@@ -23,8 +23,8 @@ class BinanceNode(Node):
         except FileNotFoundError:
             print("No Secrets Found")
             raise FileNotFoundError
-        print("API KEY:" + self.API_KEY)
-        print("SECRET KEY:" + self.SECRET_KEY)
+        #print("API KEY:" + self.API_KEY)
+        #print("SECRET KEY:" + self.SECRET_KEY)
 
     def create_market_connection(self, test_mode = False):
         self.client  = Client(self.API_KEY, self.SECRET_KEY, testnet=test_mode)

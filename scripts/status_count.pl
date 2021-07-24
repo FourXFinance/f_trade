@@ -27,6 +27,12 @@ my $cur_dir = getcwd;
 #print (color('bold red'));
 # print(localtime()."\n");
 #print(color('bold blue'));
-print("F_TRADE MODULES #");
 
-print(int(`pgrep -lafc "python3 /home/warrenf/git_tree/f_trade/*"`)-1); # There is one Extra for some unknown reason
+my $module_count = int(`pgrep -lafc "python3 /home/warrenf/git_tree/f_trade/*"`)-1; # There is one Extra for some unknown reason
+if ($module_count > 0) {
+    print("F:");
+    print($module_count); 
+} else {
+    print("Offline");
+}
+
