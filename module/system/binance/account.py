@@ -67,7 +67,15 @@ class Account(BinanceNode):
         raw_data = self.client.get_open_orders(symbol=self.ticker_name)
         # Do Something with Account Data?
         return raw_data
+    def shutdown(self):
+        pass
 
+    def hard_shutdown(self):
+        # Close all Open Orders
+        # Move all assets to ETH
+        # Withdraw ETH to Wallet.
+        # The 'binance got raided' solution. Triggered by email.
+        pass
     def get_ticker_config_from_market(self):
         raw_data = self.client.get_symbol_info(symbol=self.ticker_name)
         filters = raw_data["filters"]

@@ -59,12 +59,18 @@ class BinanceTrader(BinanceNode):
                     order = self.client.order_market_buy(
                     symbol=account_result["symbol"],
                     quantity=account_result["quantity"])
+                    # Did You know you can track the status of your order?
+                    # That's right. Every Order that is created gets an ID.
 
-                    # order = self.client.order_limit_sell(
-                    # symbol=account_result["symbol"],
-                    # quantity=account_result["quantity"],
-                    # price=account_result["target_price"])
+                    # This means we can do this
+
                     # OCO Order.
+
+                    # while count < 5 or order_not_filled:
+                    #     Check ir order is filled.
+                    #    time.sleep(1)
+
+                    # This is blocking. but will be solved in the websocket update
                     order = self.client.create_oco_order(
                     symbol= account_result["symbol"],
                     side=SIDE_SELL,
