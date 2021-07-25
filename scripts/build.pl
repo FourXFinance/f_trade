@@ -347,6 +347,8 @@ printf("$f", "Step $step_count" , "Starting Up F_Trader System");
  # TODO 2. Ping a module for liveliness using ping.pl
 
 #print (Dumper($market_config));
+
+my $pgroup = 666;
 print color('bold yellow');
 print("Starting Market Nodes\n");
 foreach (keys %$market_config) {
@@ -357,10 +359,13 @@ foreach (keys %$market_config) {
         #print ($cur_dir."/module/system/$market_name/market.py \n");
         print color('bold blue');
         print("Starting: $market_name ($_) ");
+        $pgroup+=1;
         my $pid=fork(); # TODO: Yea, We fork the current process and create a new one. But we do not assign 'new' file handlers
 	    die "Cannot fork: $!" if (! defined $pid);
         if (! $pid) {
 		# Only the child does this\
+        setpgrp(0, $pgroup);
+        print($pgroup);
             eval{
                 #TODO: Explain What is going onhere
                 exec("python3 $cur_dir/module/system/$market_name/market.py $system_name $market_name $_ >> /dev/null 2>> /dev/null &");
@@ -384,9 +389,11 @@ print color('bold yellow');
 print ("Starting Manager Node\n");
 print color('bold blue');
         print("Starting: Manager");
+        $pgroup+=1;
         my $pid=fork(); # TODO: Yea, We fork the current process and create a new one. But we do not assign 'new' file handlers
 	    die "Cannot fork: $!" if (! defined $pid);
         if (! $pid) {
+            setpgrp(0, $pgroup);
 		# Only the child does this\
             eval{
                 #TODO: Explain What is going onhere
@@ -411,9 +418,11 @@ foreach (keys %$ticker_config) {
     my $ticker_name = $_;
     print color('bold blue');
     print("Starting: Ticker ($ticker_name) ");
+        $pgroup+=1;
         my $pid=fork(); # TODO: Yea, We fork the current process and create a new one. But we do not assign 'new' file handlers
 	    die "Cannot fork: $!" if (! defined $pid);
         if (! $pid) {
+            setpgrp;
 		# Only the child does this\
             eval{
                 #TODO: Explain What is going onhere
@@ -442,9 +451,11 @@ foreach (keys %$algorithm_config) {
         #print ($cur_dir."/module/system/$market_name/market.py \n");
         print color('bold blue');
         print("Starting: Algorithm $ticker_name ($_) ");
+        $pgroup+=1;
         my $pid=fork(); # TODO: Yea, We fork the current process and create a new one. But we do not assign 'new' file handlers
 	    die "Cannot fork: $!" if (! defined $pid);
         if (! $pid) {
+            setpgrp;
 		# Only the child does this\
             eval{
                 #TODO: Explain What is going onhere
@@ -471,9 +482,11 @@ foreach (keys %$proxy_config) {
     my $ticker_name = $_;
     print color('bold blue');
     print("Starting: Proxy ($ticker_name) ");
+        $pgroup+=1;
         my $pid=fork(); # TODO: Yea, We fork the current process and create a new one. But we do not assign 'new' file handlers
 	    die "Cannot fork: $!" if (! defined $pid);
         if (! $pid) {
+            setpgrp;
 		# Only the child does this\
             eval{
                 #TODO: Explain What is going onhere
@@ -494,14 +507,18 @@ print color('green');
 print ("All Algorithm Proxies have Started\n");
 print color('bold yellow');
 print("Starting Account Nodes\n");
+
+
 foreach (keys %$account_config) {
     my $ticker_name = $_;
     print color('bold blue');
     print("Starting: Account ($ticker_name) ");
+        $pgroup+=1;
         my $pid=fork(); # TODO: Yea, We fork the current process and create a new one. But we do not assign 'new' file handlers
 	    die "Cannot fork: $!" if (! defined $pid);
         if (! $pid) {
 		# Only the child does this\
+        setpgrp;
             eval{
                 #TODO: Explain What is going onhere
                 exec("python3 $cur_dir/module/system/$system_name/account.py $system_name $ticker_name  >> /dev/null 2>> /dev/null &");
@@ -524,8 +541,10 @@ print("Starting Broker\n");
 $pid=fork(); # TODO: Yea, We fork the current process and create a new one. But we do not assign 'new' file handlers
 die "Cannot fork: $!" if (! defined $pid);
 print("Starting: Broker ($system_name) ");
+$pgroup+=1;
 if (! $pid) {
 # Only the child does this\
+    setpgrp;
     eval{
         #TODO: Explain What is going onhere
         exec("python3 $cur_dir/module/broker.py $system_name   >> /dev/null 2>> /dev/null &");
@@ -544,7 +563,9 @@ print("Starting Trader\n");
 $pid=fork(); # TODO: Yea, We fork the current process and create a new one. But we do not assign 'new' file handlers
 die "Cannot fork: $!" if (! defined $pid);
 print("Starting: Trader ($system_name) ");
+$pgroup+=1;
 if (! $pid) {
+    setpgrp;
 # Only the child does this\
     eval{
         #TODO: Explain What is going onhere
@@ -564,3 +585,11 @@ print color('green');
 print ("All Brokers And Traders have Started\n");
 print color('green');
 print ("F_Trader ($system_name) is Online\n");
+
+
+# OK OK OK OK OK.
+
+# So, The reality is... Well, this is not a great way to do this. Each 'node' should have a seperate 'terminal' ouput
+# The solution to this is to use TMUX and create a tmux config to launch all of these instances.
+# This is complicatd, but possible. I would encourage someone to pester me a lot for this to become a reality.
+# And I mean a lot.
