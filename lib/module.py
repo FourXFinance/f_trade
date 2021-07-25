@@ -4,6 +4,7 @@ from controller import Controller
 import zmq
 import json
 import signal
+import uuid
 from enums import AcceptableKlineValues
 
 class Node:
@@ -17,6 +18,7 @@ class Node:
         self.executive_controller = Controller()
         self.logging_controller = Controller()
         self.heartbeat_controller = Controller()
+        self.identifier = uuid.uuid4() # This 'might' be used for loggin purposes later on.
         #TODO: Add Heartbeat
         signal.signal(signal.SIGINT, self.shutdown)
         
