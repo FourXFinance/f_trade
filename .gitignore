@@ -10,3 +10,4 @@ config/secrets/*
 **/__pycache__/
 .f_trader
 .f_trader/*
+go.*

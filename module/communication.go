@@ -5,7 +5,7 @@ import (
 	zmq "github.com/pebbe/zmq4"
 	"fmt"
 )
-
+// The idea would now be to take this module and send emails to the registered users if shit is not going well.
 func main() {
 	//  Socket to talk to server
 	fmt.Println("Connecting to hello world server...")
