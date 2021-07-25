@@ -101,6 +101,7 @@ class Account(BinanceNode):
                 quantity = round(self.lot_size / price, self.precision)
                 message["quantity"] =  quantity
                 message["target_price"] = algorithm_result["target_price"]
+                message["stop_price"] = algorithm_result["stop_price"]
                 message["trade_type"] = algorithm_result["trade_type"]
                 print(message)
                 self.downstream_controller.send_to("PROXY", json.dumps(message));

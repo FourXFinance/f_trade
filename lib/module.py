@@ -21,7 +21,7 @@ class Node:
         self.identifier = uuid.uuid4() # This 'might' be used for loggin purposes later on.
         #TODO: Add Heartbeat
         signal.signal(signal.SIGINT, self.shutdown)
-        
+        self.logging_controller.add_stream("LOG", 10000, zmq.PUB, topic="0", bind=False, register=False)
 
     def add_upstream(self, name, port, type, topic="0", bind=False, register=False):
         self.upstream_controller.add_stream(name, port, type, topic, bind, register)
@@ -43,7 +43,10 @@ class Node:
 
     def send_to(self, stream_name, message, topic="0"):
         #TODO: Iterate through all controllers to find target stream
-        return self.downstream_controller.send_to(stream_name, message, topic)
+        
+        result = self.downstream_controller.send_to(stream_name, message, topic)
+        if result:
+            self.logging_controller.send_to("LOG: " + stream_name + "", str(self.identifier) + message) # Not Sure what else do to with logging. Add PORT!
 
     def consume_next(self):
         return self.upstream_controller.consume_next()

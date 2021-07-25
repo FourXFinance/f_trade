@@ -61,6 +61,7 @@ class AlwaysBuy(Algorithm):
                 message["ticker_name"] = self.ticker_name
                 message["trade_type"] = 0b1 << 3
                 message["ticker_price"] = 0.0000050 # This should come from the Ticker Module!
+                message["stop_price"] = 0.0000040 # This should come from the Ticker Module!
                 message["target_price"] = 0.55 # This should come from the Ticker Module!
                 print(message)
                 self.downstream_controller.send_to("PROXY", json.dumps(message))

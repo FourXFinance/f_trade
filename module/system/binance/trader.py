@@ -12,6 +12,7 @@ from binance import Client, ThreadedWebsocketManager, AsyncClient
 import asyncio
 import numpy as np
 import pandas as pd
+from binance.enums import *
 
 class BinanceTrader(BinanceNode):
     def __init__(self,system_name) -> None:
@@ -59,9 +60,17 @@ class BinanceTrader(BinanceNode):
                     symbol=account_result["symbol"],
                     quantity=account_result["quantity"])
 
-                    order = self.client.order_limit_sell(
-                    symbol=account_result["symbol"],
+                    # order = self.client.order_limit_sell(
+                    # symbol=account_result["symbol"],
+                    # quantity=account_result["quantity"],
+                    # price=account_result["target_price"])
+                    # OCO Order.
+                    order = self.client.create_oco_order(
+                    symbol= account_result["symbol"],
+                    side=SIDE_SELL,
+                    stopLimitTimeInForce=TIME_IN_FORCE_GTC,
                     quantity=account_result["quantity"],
+                    stopPrice=account_result["stop_price"],
                     price=account_result["target_price"])
             except Exception as e:
                 print(e)
