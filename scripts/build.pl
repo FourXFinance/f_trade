@@ -459,7 +459,7 @@ foreach (keys %$algorithm_config) {
 		# Only the child does this\
             eval{
                 #TODO: Explain What is going onhere
-                exec("python3 $cur_dir/algorithm/$_.py $system_name $ticker_name $_ >> /dev/tty63 2>> /dev/tty63 &");
+                exec("python3 $cur_dir/algorithm/$_.py $system_name $ticker_name $_ >> /dev/tty63 2>> /dev/ &");
                 exit(); # < Technically not possible to reach
                 # NO EXECUTION BELOW THIS POINT!
             };

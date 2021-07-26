@@ -7,6 +7,10 @@ import time
 import pandas as pd
 from ast import literal_eval
 from enums import AcceptableKlineValues, Sleep
+
+from zmq.eventloop import ioloop, zmqstream
+import asyncio
+
 import os
 
 
@@ -26,7 +30,8 @@ class Manager(Node):
         self.setup_upstream()
         self.setup_downstream()
         #TODO Map Bindings of Ticker to Port.
-
+    def test_message(self, msg):
+        print ("TESTTESTTEST")
     def load_configs(self):
         # Manager Node needs two configs to work: Traders and Market
 
@@ -62,7 +67,10 @@ class Manager(Node):
                         topic=topic,
                         bind=False,
                         register=True
-                    )                    
+                    )        
+                    socket = self.upstream_controller.get_stream_raw(interval + "." + ticker)
+                    stream_sub = zmqstream.ZMQStream(socket)
+                    stream_sub.on_recv(self.test_message)
     def setup_downstream(self):
         for ticker in self.ticker_configs.keys():
             # TODO: Extra Level of Abstraction for Collection of Controllers
@@ -80,6 +88,8 @@ class Manager(Node):
     def run(self):
         while True:
             #TODO: Event Loop
+            ioloop.IOLoop.instance().start()
+            return
             upstreams = self.upstream_controller.get_streams()
             downstreams = self.downstream_controller.get_streams()
             #print(all_streams)

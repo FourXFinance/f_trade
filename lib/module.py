@@ -6,7 +6,7 @@ import json
 import signal
 import uuid
 from enums import AcceptableKlineValues
-
+from zmq.eventloop import ioloop, zmqstream
 class Node:
     enabled = False
     def __init__(self, system_name, name, id=None):
@@ -46,7 +46,7 @@ class Node:
         
         result = self.downstream_controller.send_to(stream_name, message, topic)
         if result:
-            self.logging_controller.send_to("LOG: " + stream_name + "", str(self.identifier) + message) # Not Sure what else do to with logging. Add PORT!
+            self.logging_controller.send_to("LOG", str(self.identifier) + message) # Not Sure what else do to with logging. Add PORT!
 
     def consume_next(self):
         return self.upstream_controller.consume_next()
@@ -62,6 +62,7 @@ class Node:
 
     def shutdown(self, sig, frame):
         print("Safe Shutdown Process")
+        ioloop.IOLoop.instance().stop()
         sys.exit(0)
 
     def heartbeat(self):

@@ -11,7 +11,6 @@ import zmq
 import json
 from datetime import datetime
 import time
-
 from binance import Client, ThreadedWebsocketManager, AsyncClient
 import asyncio
 # This is a tick Node. You will run one of these for every time interval
