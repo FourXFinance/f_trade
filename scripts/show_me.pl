@@ -5,7 +5,8 @@ use Cwd;
 
 
 # The Idea for this script is to find a module and connect to it's STDOOUT/STDERR. This is super work in progress
-
+print "Error: Root Permissions Required\n" unless not $>;
+exit (-1) unless not $>;
 my @args = @ARGV;
 
 system("echo 0 >> /proc/sys/kernel/yama/ptrace_scope");
