@@ -104,6 +104,8 @@ echo "alias F='perl ${CUR_DIR}/explore.pl'" >> ~/.f_trader_rc;
 echo "alias B='perl ${CUR_DIR}/build.pl'" >> ~/.f_trader_rc;
 echo "alias S='perl ${CUR_DIR}/status.pl'" >> ~/.f_trader_rc;
 echo "alias K='perl ${CUR_DIR}/shutdown.pl'" >> ~/.f_trader_rc;
+# We use tty63 for our output. This cannot be root
+chmod 777 /dev/tty63 # TODO. 777 means we all die
 tput setaf 2;
 #TODO: Automatically source.
 echo "F_Trader has Been Installed (Don't forget to source ~/.f_trader_rc for shorthand commands)";
