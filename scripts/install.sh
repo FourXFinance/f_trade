@@ -1,6 +1,6 @@
 #!/bin/bash
 
-declare -a system_apps=("git" "perl" "perl-doc" "python3-pip" "tmux") 
+declare -a system_apps=("git" "perl" "perl-doc" "python3-pip" "tmux" "raptyr") 
 
 for i in "${system_apps[@]}"
     do
