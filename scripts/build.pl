@@ -368,7 +368,7 @@ foreach (keys %$market_config) {
         print($pgroup);
             eval{
                 #TODO: Explain What is going onhere
-                exec("python3 $cur_dir/module/system/$market_name/market.py $system_name $market_name $_ >> /dev/null 2>> /dev/null &");
+                exec("python3 $cur_dir/module/system/$market_name/market.py $system_name $market_name $_ >> /dev/tty63 2>> /dev/null &");
                 exit(); # < Technically not possible to reach
                 # NO EXECUTION BELOW THIS POINT!
             };
@@ -397,7 +397,7 @@ print color('bold blue');
 		# Only the child does this\
             eval{
                 #TODO: Explain What is going onhere
-                exec("python3 $cur_dir/module/manager.py $system_name  >> /dev/null\ 2>> /dev/null &");
+                exec("python3 $cur_dir/module/manager.py $system_name  >> /dev/tty63 2>> /dev/null &");
                 exit(); # < Technically not possible to reach
                 # NO EXECUTION BELOW THIS POINT!
             };
@@ -426,7 +426,7 @@ foreach (keys %$ticker_config) {
 		# Only the child does this\
             eval{
                 #TODO: Explain What is going onhere
-                exec("python3 $cur_dir/module/ticker.py $system_name $ticker_name  >> /dev/null 2>> /dev/null &");
+                exec("python3 $cur_dir/module/ticker.py $system_name $ticker_name  >> /dev/tty63 2>> /dev/null &");
                 exit(); # < Technically not possible to reach
                 # NO EXECUTION BELOW THIS POINT!
             };
@@ -459,7 +459,7 @@ foreach (keys %$algorithm_config) {
 		# Only the child does this\
             eval{
                 #TODO: Explain What is going onhere
-                exec("python3 $cur_dir/algorithm/$_.py $system_name $ticker_name $_ >> /dev/null 2>> /dev/null &");
+                exec("python3 $cur_dir/algorithm/$_.py $system_name $ticker_name $_ >> /dev/tty63 2>> /dev/null &");
                 exit(); # < Technically not possible to reach
                 # NO EXECUTION BELOW THIS POINT!
             };
@@ -490,7 +490,7 @@ foreach (keys %$proxy_config) {
 		# Only the child does this\
             eval{
                 #TODO: Explain What is going onhere
-                exec("python3 $cur_dir/module/util/proxy.py $system_name $ticker_name  >> /dev/null 2>> /dev/null &");
+                exec("python3 $cur_dir/module/util/proxy.py $system_name $ticker_name  >> /dev/tty63 2>> /dev/null &");
                 exit(); # < Technically not possible to reach
                 # NO EXECUTION BELOW THIS POINT!
             };
@@ -521,7 +521,7 @@ foreach (keys %$account_config) {
         setpgrp;
             eval{
                 #TODO: Explain What is going onhere
-                exec("python3 $cur_dir/module/system/$system_name/account.py $system_name $ticker_name  >> /dev/null 2>> /dev/null &");
+                exec("python3 $cur_dir/module/system/$system_name/account.py $system_name $ticker_name  >> /dev/tty63 2>> /dev/null &");
                 exit(); # < Technically not possible to reach
                 # NO EXECUTION BELOW THIS POINT!
             };
@@ -547,7 +547,7 @@ if (! $pid) {
     setpgrp;
     eval{
         #TODO: Explain What is going onhere
-        exec("python3 $cur_dir/module/broker.py $system_name   >> /dev/null 2>> /dev/null &");
+        exec("python3 $cur_dir/module/broker.py $system_name   >> /dev/tty63 2>> /dev/null &");
         exit(); # < Technically not possible to reach
         # NO EXECUTION BELOW THIS POINT!
     };
@@ -569,7 +569,7 @@ if (! $pid) {
 # Only the child does this\
     eval{
         #TODO: Explain What is going onhere
-        exec("python3 $cur_dir/module/system/$system_name/trader.py $system_name   >> /dev/null  2>> /dev/null &");
+        exec("python3 $cur_dir/module/system/$system_name/trader.py $system_name   >> /dev/tty63  2>> /dev/null &");
         exit(); # < Technically not possible to reach
         # NO EXECUTION BELOW THIS POINT!
     };
