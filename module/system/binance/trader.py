@@ -83,7 +83,7 @@ class BinanceTrader(BinanceNode):
             except Exception as e:
                 pass
                 print(e)
-            time.sleep(1)
+            #time.sleep(1)
             
 if __name__ == "__main__":
     system_name =  sys.argv[1]

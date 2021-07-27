@@ -86,7 +86,7 @@ class Ticker(Node):
                 message = pd.read_json(data["message"])
                 #print(message)
                 self.downstream_controller.send_to("DATA", message.to_json())
-            time.sleep(1)
+            #time.sleep(1)
 
 if __name__ == "__main__":
     T = Ticker(str(argv[1]), str(argv[2]))

@@ -128,7 +128,7 @@ class Account(BinanceNode):
                 # We're In Business
                 self.downstream_controller.send_to("PROXY", json.dumps(data["message"]));
                     
-            time.sleep(1)
+        
             
 if __name__ == "__main__":
     A = Account(sys.argv[1], sys.argv[2])
