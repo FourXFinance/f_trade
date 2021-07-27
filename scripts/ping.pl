@@ -9,23 +9,24 @@ use ZMQ::FFI::Constants qw(ZMQ_PUB ZMQ_SUB ZMQ_DONTWAIT);
 use TryCatch;
 use Time::HiRes qw(usleep);
 
-# Connect to task ventilator
-my $context = ZMQ::FFI->new();
-#my $receiver = $context->socket(ZMQ_PUB);
-#$receiver->connect('tcp://localhost:5557');
+my $target_port = shift;
+die "No Target Port Specified" unless $target_port;
+my $max_count = shift // 15;
 
-# Connect to weather server
+my $context = ZMQ::FFI->new();
+
+my $publisher = $context->socket(ZMQ_PUB);
+$publisher->bind('tcp://127.0.0.1:5557');
+
 my $subscriber = $context->socket(ZMQ_SUB);
 $subscriber->connect('tcp://127.0.0.1:11000');
-$subscriber->subscribe('0');
-
-# Process messages from both sockets
-# We prioritize traffic from the task ventilator
+$subscriber->subscribe('PING'); # Custom Topic!
 
 my $iterate_count = 0;
 my $was_success = 0;
-my $max_count = 15;
-$| = 1;
+
+my $client_name = undef; 
+$| = 1; # Clears the IO buffer. 
 while (1) {
 
     PROCESS_UPDATE:
@@ -39,7 +40,6 @@ while (1) {
         }
     }
 
-    # No activity, so sleep for 1 msec
     if($was_success){
         last;
     }
@@ -50,7 +50,7 @@ while (1) {
         
         $iterate_count +=1;
         print("Trying Again: ($iterate_count/$max_count)\n");
-        sleep(1);
+        usleep(1000 * 1000 * 1);
     }
     
 }
