@@ -62,7 +62,8 @@ class Scalp(Algorithm):
             elif int(trade["time"]) >= cur_time:
                 cur_time = int(trade["time"])
             else:
-                print("Time Inconsistency!")
+                pass
+                #print("Time Inconsistency!")
                 # TODO: Figure out what this means? Maybe we are getting a previous set.
             price+=float(trade["price"])
             buyer_maker_count += 1 if trade["isBuyerMaker"] else 0
@@ -70,18 +71,19 @@ class Scalp(Algorithm):
         price = price/len(raw_data)
         lowest_id = raw_data[0][0]["id"]
         highest_id = raw_data[-1][0]["id"]
-        print(bcolors.OKCYAN + "AVG Price\t" + str(price) + ": " , end="")
+        #print(bcolors.OKCYAN + "AVG Price\t" + str(price) + ": " , end="")
         if self.previous_price == None:
-            print(bcolors.WARNING + "\u0398")
+            #print(bcolors.WARNING + "\u0398")
             self.previous_price = price
         elif self.previous_price < price:
-            print(bcolors.OKGREEN + '\u2197')
+            #print(bcolors.OKGREEN + '\u2197')
             self.previous_price = price
             self.count+=1
         elif self.previous_price == price:
-            print(bcolors.OKCYAN + '\u21dd')
+            #print(bcolors.OKCYAN + '\u21dd')
+            pass
         else:
-            print(bcolors.FAIL + '\u2198')
+            #print(bcolors.FAIL + '\u2198')
             self.previous_price = None
             self.count = 0
             self.fail_count +=1
@@ -89,7 +91,7 @@ class Scalp(Algorithm):
             next
         if self.count == self.window:
             #Make a Buy Request
-            print(bcolors.OKGREEN + "(" + "\u0024" + ") Buying " + self.ticker_name)
+            #print(bcolors.OKGREEN + "(" + "\u0024" + ") Buying " + self.ticker_name)
             self.downstream_controller.send_to("PROXY", "BUY ME")
         
 

@@ -15,13 +15,13 @@ sub ping_node {
     my $target_node = shift;
     print color('green');
     # This is not just for look. Some Time needed to allow the system to start up.
-    system("sleep 0.1");
+    system("sleep 0.01");
     print(".");
-    system("sleep 0.1");
+    system("sleep 0.01");
     print(".");
-    system("sleep 0.1");
+    system("sleep 0.01");
     print(".");
-    system("sleep 0.1");
+    system("sleep 0.01");
     print color('bold green');
     print("\t✓\n");
 }
@@ -35,7 +35,7 @@ if (not defined $system_name) {
 #TTY
 
 my $std_tty = 'tty';
-my $std_err_tty = 'null';
+my $std_err_tty = 'tty';
 my $config;
 my $system_config = {};
 my $ticker_config = {};
@@ -52,6 +52,7 @@ eval  {
     die "Error Loading System Config: $error";
 };
 
+
 my $step_count = 1;
 my $sub_count = 1;
 my $sub_sub_count = 1;
@@ -63,6 +64,16 @@ my $cur_dir = getcwd;
 system("perl $cur_dir/scripts/shutdown.pl");
 # Validate System Config
 $system_config= $config->{system};
+
+
+if (defined $system_config->{override_system_name}) {
+    
+    print color('bold red');
+    print("Overriden System name from $system_name to ");
+    $system_name = $system_config->{override_system_name};
+    print("$system_name \n");
+}
+print color('reset');
 #print color('bold magenta');
 printf("$f", "Error:" , "No System Entry Defined") and die ("Startup Error")unless $system_config;
 my $config_name = $system_config->{name};
@@ -401,7 +412,7 @@ print color('bold blue');
 		# Only the child does this\
             eval{
                 #TODO: Explain What is going onhere
-                exec("python3 $cur_dir/module/manager.py $system_name  ");
+                exec("python3 $cur_dir/module/manager.py $system_name  >> /dev/$std_tty 2>> /dev/$std_err_tty &");
                 exit(); # < Technically not possible to reach
                 # NO EXECUTION BELOW THIS POINT!
             };

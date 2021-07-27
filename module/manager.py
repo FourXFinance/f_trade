@@ -8,7 +8,7 @@ import pandas as pd
 from ast import literal_eval
 from enums import AcceptableKlineValues, Sleep
 from zmq.eventloop import ioloop, zmqstream
-
+from datetime import datetime
 import asyncio
 
 import os
@@ -32,8 +32,10 @@ class Manager(Node):
         #TODO Map Bindings of Ticker to Port.
 
     def process_message(self, stream, msg):
+        now = datetime.now().time()
+        print(self.name, " : ", now)
         stream_name = self.upstream_socket_map[stream.socket] # Now we have the name of our stream!
-        print(len(msg))
+        #print(len(msg))
         raw_data = msg[0] # For Reaons beyond me, this is an array of data.
         data = {'topic': raw_data[:1], 'message':raw_data[1:]}
         message = pd.read_json(data["message"])

@@ -22,7 +22,7 @@ class AlwaysBuy(Algorithm):
     def __init__(self, system_name, ticker) -> None:
         super().__init__(system_name, ticker)
         self.ticker_name = ticker
-        self.test_mode = True
+        self.test_mode = False
         pass
     def setup_defaults(self):
         pass
@@ -35,13 +35,13 @@ class AlwaysBuy(Algorithm):
         pass
     def check(self, data):
         # This Algorithm Always Submits a Request to Buy Whenever it gets data
-        print(bcolors.OKGREEN + "(" + "\u0024" + ") Buying " + self.ticker_name)
+        #print(bcolors.OKGREEN + "(" + "\u0024" + ") Buying " + self.ticker_name)
         message = {}
         message["result"] = "BUY"
         message["weight"] = 0
         message["ticker_name"] = self.ticker_name
         # df = pd.DataFrame(data=message)
-        print(message)
+        #print(message)
         self.downstream_controller.send_to("PROXY", json.dumps(message))
             
     def run(self):
@@ -49,11 +49,22 @@ class AlwaysBuy(Algorithm):
             if not self.test_mode:
                 raw_data = self.recv_from("DATA").decode('UTF-8')
                 #print (raw_data)
-                data = {'topic': raw_data[:1], 'message':raw_data[1:]}
-                message = pd.read_json(data["message"])
-                decision = self.check(message)            
+                #data = {'topic': raw_data[:1], 'message':raw_data[1:]}
+                #message = pd.read_json(data["message"])
+                #decision = self.check(message)            
                 #print(data["message"])##
-                time.sleep(1) # Let's not be too hasty
+                #time.sleep(1) # Let's not be too hasty
+                message = {}
+                now = datetime.now().time()
+                print(self.name, " : ", now)
+                message["weight"] = 0
+                message["ticker_name"] = self.ticker_name
+                message["trade_type"] = 0b1 << 3
+                message["ticker_price"] = 0.0000050 # This should come from the Ticker Module!
+                message["stop_price"] = 0.0000040 # This should come from the Ticker Module!
+                message["target_price"] = 0.55 # This should come from the Ticker Module!
+                #print(message)
+                self.downstream_controller.send_to("PROXY", json.dumps(message))
             else:
                 message = {}
                 
@@ -63,9 +74,9 @@ class AlwaysBuy(Algorithm):
                 message["ticker_price"] = 0.0000050 # This should come from the Ticker Module!
                 message["stop_price"] = 0.0000040 # This should come from the Ticker Module!
                 message["target_price"] = 0.55 # This should come from the Ticker Module!
-                print(message)
+                #print(message)
                 self.downstream_controller.send_to("PROXY", json.dumps(message))
-                time.sleep(1)
+                #time.sleep(1)
             
 
 

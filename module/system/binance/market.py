@@ -71,7 +71,7 @@ class MarketWorker(BinanceNode):
         recent_trades =  np.array(raw_data)
         df = pd.DataFrame(data=recent_trades)
         #print(df.to_json())
-        print(ticker_name + "\t" + str(self.tickers_with_topic[ticker_name]))
+        #print(ticker_name + "\t" + str(self.tickers_with_topic[ticker_name]))
         self.send_to(self.interval, df.to_json(), topic=self.tickers_with_topic[ticker_name])
     
     # TODO: This value 'limit' Should be dynamically calculated to avoid over/under fetching data
@@ -84,7 +84,7 @@ class MarketWorker(BinanceNode):
         recent_trades = np.array(raw_data)
         df = pd.DataFrame(data=recent_trades)
         #print(df.to_json())
-        print(ticker_name + "\t" + str(self.tickers_with_topic[ticker_name]))
+        #print(ticker_name + "\t" + str(self.tickers_with_topic[ticker_name]))
         self.send_to(self.interval, df.to_json(), topic=self.tickers_with_topic[ticker_name])
         self.send_to(self.interval, df.to_json(), topic=self.tickers_with_topic[ticker_name])
         

@@ -8,6 +8,7 @@ import pandas as pd
 from ast import literal_eval
 from enums import AcceptableKlineValues, Sleep
 import os
+from datetime import datetime
 class Ticker(Node):
     def __init__(self,system_name, ticker_name) -> None:
         self.name = "Ticker"
@@ -68,21 +69,22 @@ class Ticker(Node):
     def clean_algorithm(self):
         pass
     def run(self):
+        upstreams = self.upstream_controller.get_streams()
+        upstream_socket_map = {}
+        for stream in upstreams.keys():
+            #print(all_streams[stream])
+            #print(all_streams[stream].name)
+            upstream_socket_map[upstreams[stream].get_socket()] = upstreams[stream].name
         while True:
-            upstreams = self.upstream_controller.get_streams()
-            upstream_socket_map = {}
-            for stream in upstreams.keys():
-                #print(all_streams[stream])
-                #print(all_streams[stream].name)
-               upstream_socket_map[upstreams[stream].get_socket()] = upstreams[stream].name
-
             for stream in self.upstream_controller.recv_snapshot():
+                now = datetime.now().time()
+                print(self.name, " : ", now)
                 #We have a dictionary of streams. Which one do we have
                 input_stream = upstream_socket_map[stream]
                 raw_data = stream.recv().decode('UTF-8')
                 data = {'topic': raw_data[:1], 'message':raw_data[1:]}
                 message = pd.read_json(data["message"])
-                print(message)
+                #print(message)
                 self.downstream_controller.send_to("DATA", message.to_json())
             time.sleep(1)
 

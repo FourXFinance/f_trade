@@ -54,8 +54,10 @@ class BinanceTrader(BinanceNode):
                 raw_data = self.recv_from("DATA").decode('UTF-8')
                 data = {'topic': raw_data[:1], 'message':raw_data[1:]}
                 account_result = json.loads(data["message"])
-                print(account_result)
+                #print(account_result)
                 if account_result["trade_type"] == 0b1 << 3:
+                    now = datetime.now().time()
+                    print(self.name, " : ", now)
                     order = self.client.order_market_buy(
                     symbol=account_result["symbol"],
                     quantity=account_result["quantity"])
@@ -79,6 +81,7 @@ class BinanceTrader(BinanceNode):
                     stopPrice=account_result["stop_price"],
                     price=account_result["target_price"])
             except Exception as e:
+                pass
                 print(e)
             time.sleep(1)
             

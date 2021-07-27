@@ -78,6 +78,7 @@ class Account(BinanceNode):
         pass
     def get_ticker_config_from_market(self):
         raw_data = self.client.get_symbol_info(symbol=self.ticker_name)
+        #print(self.ticker_name)
         filters = raw_data["filters"]
         
         for f in filters:
@@ -102,6 +103,8 @@ class Account(BinanceNode):
             data = {'topic': raw_data[:1], 'message':raw_data[1:]}
             algorithm_result = json.loads(data["message"])
             if algorithm_result["trade_type"] == 0b1 << 3:
+                now = datetime.now().time()
+                print(self.name, " : ", now)
                 # Buy With Sell
                 message = {}
                 message["symbol"] = self.ticker_name
@@ -111,7 +114,7 @@ class Account(BinanceNode):
                 message["target_price"] = algorithm_result["target_price"]
                 message["stop_price"] = algorithm_result["stop_price"]
                 message["trade_type"] = algorithm_result["trade_type"]
-                print(message)
+                #print(message)
                 self.downstream_controller.send_to("PROXY", json.dumps(message));
             # Check to see if we have too many open trades or not
             if self.open_trades >= self.max_open_trades:
