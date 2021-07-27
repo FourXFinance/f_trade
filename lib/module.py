@@ -69,6 +69,18 @@ class Node:
         # TODO: Handle Heartbeat with Callbacks! - Coming Soon!!!
         return "Beep!"
 
+    def build_mappings(self):
+        upstreams = self.upstream_controller.get_streams()
+        downstreams = self.downstream_controller.get_streams()
+        # TODO: Build Mappings for other controllers
+        self.upstream_socket_map = {}
+        self.downstream_name_map = {}
+        for stream in upstreams.keys():
+            self.upstream_socket_map[upstreams[stream].get_socket()] = upstreams[stream].name
+        for stream in downstreams.keys():
+            self.downstream_name_map[downstreams[stream].name] = downstreams[stream].get_socket()
+
+
 class Algorithm(Node):
     def __init__(self, system_name, ticker):
         self.ticker = ticker
