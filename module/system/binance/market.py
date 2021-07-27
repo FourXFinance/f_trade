@@ -11,7 +11,6 @@ import zmq
 import json
 from datetime import datetime
 import time
-
 from binance import Client, ThreadedWebsocketManager, AsyncClient
 import asyncio
 # This is a tick Node. You will run one of these for every time interval
@@ -87,7 +86,8 @@ class MarketWorker(BinanceNode):
         #print(df.to_json())
         print(ticker_name + "\t" + str(self.tickers_with_topic[ticker_name]))
         self.send_to(self.interval, df.to_json(), topic=self.tickers_with_topic[ticker_name])
-
+        self.send_to(self.interval, df.to_json(), topic=self.tickers_with_topic[ticker_name])
+        
     async def get_data_for_ticker(self, ticker):
         
         if self.interval == 'RT':
