@@ -15,6 +15,7 @@ system:
   account_offset: 51
   broker_proxy_port: 6000
   trader_proxy_port: 7000
+  heartbeat_base_port: 14000 # Heartbeat 'server'
   trader_enabled: False
   logger_port: 10000
   logger_proxy_port: 9000
@@ -38,7 +39,7 @@ tickers:
       window: 10
       target_growth: 1.04
   - name: scalp_low
-    enabled: True
+    enabled: False
     config:
       window: 10
       target_growth: 1.04

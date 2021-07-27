@@ -7,9 +7,11 @@ import signal
 import uuid
 from enums import AcceptableKlineValues
 from zmq.eventloop import ioloop, zmqstream
+from datetime import datetime
 class Node:
     enabled = False
     def __init__(self, system_name, name, id=None):
+        self.mode = 0 # TODO: Define the Modes (Ionian....)
         self.system_name = system_name
         self.context = zmq.Context()
         self.name = name
@@ -18,11 +20,47 @@ class Node:
         self.executive_controller = Controller()
         self.logging_controller = Controller()
         self.heartbeat_controller = Controller()
-        self.identifier = uuid.uuid4() # This 'might' be used for loggin purposes later on.
-        #TODO: Add Heartbeat
+        self.identifier = uuid.uuid4() # This 'might' be used for loggin purposes later on.        
         signal.signal(signal.SIGINT, self.shutdown)
         self.logging_controller.add_stream("LOG", 10000, zmq.PUB, topic="0", bind=False, register=False)
 
+    
+    def setup_heartbeat(self, override_port=None):
+        port = None
+        if override_port != None: #The Manager Node does not have a generated config. TODO: Create Config for Manager Node. Even if it is just it's heartbeat port
+            port = override_port
+        else:
+            port = self.config["heartbeat_port"]
+        self.heartbeat_controller.add_stream("HEARTBEAT", port, zmq.PAIR, topic="0", bind=True, register=False)
+        socket = self.heartbeat_controller.get_stream_raw("HEARTBEAT")
+        stream_sub = zmqstream.ZMQStream(socket)
+        stream_sub.on_recv_stream(self.heartbeat)
+
+    def heartbeat(self, stream , msg):
+        """ Heartbeat What do we respond with when we get a liveliness check from the heartbeat controller"""
+        message = msg[0].decode('UTF-8')
+        now = datetime.now().time()
+        if message == "PING":            
+            self.heartbeat_controller.send_to("HEARTBEAT", {
+                "name" : self.name,
+                "response" : "",
+                "ts" : str(now)
+                }
+            )
+        else:
+            pass #fucking panic. Nothing else should be on this heartbeat controller.
+    
+    def handle_executive(self, stream, msg):
+        """handle_executive. How do we action and respond to messages from the executive controller"""
+        message = msg[0].decode('UTF-8')
+        if message == "START":
+            ioloop.IOLoop.instance().start()
+            self.heartbeat_controller.send_to("HEARTBEAT", {
+                "name" : self.name,
+                "response" : "starting",
+                "ts" : str(now)
+                }
+            ) 
     def add_upstream(self, name, port, type, topic="0", bind=False, register=False):
         self.upstream_controller.add_stream(name, port, type, topic, bind, register)
         
@@ -65,10 +103,7 @@ class Node:
         ioloop.IOLoop.instance().stop()
         sys.exit(0)
 
-    def heartbeat(self):
-        # TODO: Handle Heartbeat with Callbacks! - Coming Soon!!!
-        return "Beep!"
-
+    
     def build_mappings(self):
         upstreams = self.upstream_controller.get_streams()
         downstreams = self.downstream_controller.get_streams()
@@ -92,7 +127,7 @@ class Algorithm(Node):
             with open("config/generated/" + self.system_name + "/algorithm/" + self.ticker + "/" + self.name + ".json") as config:
                 self.config_raw = json.load(config)
                 
-                print(self.config_raw)
+                #print(self.config_raw)
         except FileNotFoundError:
             print("Algorithm Config Is Missing!")
 
@@ -139,7 +174,6 @@ class Proxy(Node):
         try:
             with open("config/generated/" + self.system_name + "/proxy/" + self.ticker_name + ".json") as config:
                 raw_credentials = json.load(config)
-                print(raw_credentials)
                 self.config = raw_credentials
         except FileNotFoundError:
             print("config/generated/" + self.system_name + "/proxy/" + self.market_name + ".json")

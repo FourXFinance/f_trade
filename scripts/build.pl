@@ -125,6 +125,8 @@ printf("$f", "Error:" , "No Trader Proxy Port Defined") and die ("Startup Error"
 
 printf("$f", "Base Ticker Port (Offset):" , $base_ticker_port." (".$base_ticker_offset.")");
 
+my $heartbeat_base_port = $system_config->{heartbeat_base_port};
+printf("$f", "Error:" , "No Heart Beat Server Port Defined") and die ("Startup Error") unless $heartbeat_base_port;
 
 my $markets = $config->{markets};
 printf("$f", "Error:" , "No Markets Defined") and die ("Startup Error") unless $markets;
@@ -135,7 +137,9 @@ my $current_ticker_port = $base_ticker_port;
 my $current_algorithm_port = $base_algorithm_port;
 my $current_market_base = $base_market_port;
 my $current_algorithm_proxy_port = $base_algorithm_port + $algorithm_proxy_offset;
+my $current_heartbeat_port = $heartbeat_base_port;
 my $market_config = {};
+my $heartbeat_config = {};
 for my $market (@$markets) {
     my $current_market_port = $current_market_base;
     my $market_enabled = $market->{enabled};
@@ -143,18 +147,22 @@ for my $market (@$markets) {
     my $market_name = lc $market->{name};
     my $temp = $market->{enabled_tick_sources};
     my $market_socket_bindings = {};
-
+    my $market_heartbeat_ports = {};
     my @market_tick_sources = ();
     for my $tick (@$temp) { 
         push @market_tick_sources, $tick;
         $market_socket_bindings->{$tick} = $current_market_port;
         $current_market_port +=1;
+        $market_heartbeat_ports->{$tick} = $current_heartbeat_port;
+        $current_heartbeat_port+=1;
     }
     $market_config->{$market_name} = {
         name => $market_name,
         sources => $market_socket_bindings,
-        tracked_tickers => []
+        tracked_tickers => [],
+        heartbeat_port => $market_heartbeat_ports
     };
+    
     $current_market_base += $base_market_offset;
     printf("$f", "Step $step_count.$sub_count:" , "Market '$market_name' has valid Configuration");
     $sub_count+=1;
@@ -192,8 +200,10 @@ for my $ticker (@$tickers) {
         upstream_root_port => $current_ticker_port,
         required_sources => $required_sources,
         algorithm_port => $current_algorithm_port,
+        heartbeat_port => $current_heartbeat_port,
     };
     #TODO: Handle Different Markets with Different Tickers
+    $current_heartbeat_port+=1;
     push @{$market_config->{'binance'}->{tracked_tickers}}, {$ticker_name => $topic};
     $topic+=1;
     # my $current_algorithm_port = $current_ticker_port;
@@ -210,10 +220,13 @@ for my $ticker (@$tickers) {
             algorithm_port => $current_algorithm_port, #TODO: Figure out what to do with this?
             algorithm_name => $algorithm_name,
             configuration_options => $config,
-            proxy_port => $current_algorithm_proxy_port
+            proxy_port => $current_algorithm_proxy_port,
+            heartbeat_port => $current_heartbeat_port,
         };
+        $current_heartbeat_port+=1;
         # $current_algorithm_port+=1;
     }
+    
     $proxy_config->{$ticker_name} = {
         algorithm_proxy_port => $current_algorithm_port + $algorithm_proxy_offset,
         account_proxy_port => $current_algorithm_port + $account_offset,
@@ -221,7 +234,9 @@ for my $ticker (@$tickers) {
     $account_config->{$ticker_name} = {
         account_proxy_port => $current_algorithm_port + $account_offset,
         broker_proxy_port => $broker_proxy_port,
+        heartbeat_port => $current_heartbeat_port,
     };
+    $current_heartbeat_port+=1;
     $sub_count+=1;
     $current_algorithm_proxy_port += $base_ticker_offset;
     $current_ticker_port += $base_ticker_offset;

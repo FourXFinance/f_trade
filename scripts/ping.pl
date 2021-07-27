@@ -4,7 +4,7 @@ use warnings;
 use v5.10;
 
 use ZMQ::FFI;
-use ZMQ::FFI::Constants qw(ZMQ_PUB ZMQ_SUB ZMQ_DONTWAIT);
+use ZMQ::FFI::Constants qw(ZMQ_PAIR ZMQ_SUB ZMQ_DONTWAIT);
 
 use TryCatch;
 use Time::HiRes qw(usleep);
@@ -15,24 +15,23 @@ my $max_count = shift // 15;
 
 my $context = ZMQ::FFI->new();
 
-my $publisher = $context->socket(ZMQ_PUB);
-$publisher->bind('tcp://127.0.0.1:5557');
+my $CONNECTION = $context->socket(ZMQ_PAIR);
+$CONNECTION->connect("tcp://127.0.0.1:$target_port");
 
-my $subscriber = $context->socket(ZMQ_SUB);
-$subscriber->connect('tcp://127.0.0.1:11000');
-$subscriber->subscribe('PING'); # Custom Topic!
-
-my $iterate_count = 0;
+$CONNECTION->send("PING");
+my $iterate_count = -1;
 my $was_success = 0;
 
 my $client_name = undef; 
+
 $| = 1; # Clears the IO buffer. 
 while (1) {
 
     PROCESS_UPDATE:
     while (1) {
         try {
-            my $msg = $subscriber->recv(ZMQ_DONTWAIT);
+            my $msg = $CONNECTION->recv(ZMQ_DONTWAIT);
+            print($msg."\n");
             $was_success = 1;
         }
         catch {
@@ -49,9 +48,18 @@ while (1) {
     } else {
         
         $iterate_count +=1;
-        print("Trying Again: ($iterate_count/$max_count)\n");
+        if($iterate_count > 0){
+            print("Trying Again: ($iterate_count/$max_count)\n");
+        }
+        
         usleep(1000 * 1000 * 1);
     }
     
 }
-print("Result: $was_success ($iterate_count)\n");
+if ($iterate_count == $max_count) {
+    print("tcp://127.0.0.1:$target_port is Not Responding\n");
+    exit;
+} else {
+    print("tcp://127.0.0.1:$target_port is Alive\n");
+    exit 1;
+}

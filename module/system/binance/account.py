@@ -38,7 +38,7 @@ class Account(BinanceNode):
         try:
             with open("config/generated/" + self.system_name + "/account/" + self.ticker_name + ".json") as config:
                 raw_credentials = json.load(config)
-                print(raw_credentials)
+                #print(raw_credentials)
                 self.config = raw_credentials
         except FileNotFoundError:
             print("config/generated/" + self.system_name + "/account/" + self.market_name + ".json")
@@ -82,7 +82,7 @@ class Account(BinanceNode):
         filters = raw_data["filters"]
         
         for f in filters:
-            print(f)
+            #print(f)
             if f["filterType"] == "PRICE_FILTER":
                 self.tick_size = float(f["tickSize"])
                 ts = self.tick_size
@@ -104,7 +104,7 @@ class Account(BinanceNode):
             algorithm_result = json.loads(data["message"])
             if algorithm_result["trade_type"] == 0b1 << 3:
                 now = datetime.now().time()
-                print(self.name, " : ", now)
+                #print(self.name, " : ", now)
                 # Buy With Sell
                 message = {}
                 message["symbol"] = self.ticker_name

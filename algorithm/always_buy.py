@@ -56,7 +56,7 @@ class AlwaysBuy(Algorithm):
                 #time.sleep(1) # Let's not be too hasty
                 message = {}
                 now = datetime.now().time()
-                print(self.name, " : ", now)
+                #print(self.name, " : ", now)
                 message["weight"] = 0
                 message["ticker_name"] = self.ticker_name
                 message["trade_type"] = 0b1 << 3

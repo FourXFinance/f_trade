@@ -29,11 +29,14 @@ class Manager(Node):
         self.load_configs()
         self.setup_upstream()
         self.setup_downstream()
+        self.config = {}
+        self.config["heartbeat_port"] = 13999 # FIX THIS
+        self.setup_heartbeat()
         #TODO Map Bindings of Ticker to Port.
 
     def process_message(self, stream, msg):
         now = datetime.now().time()
-        print(self.name, " : ", now)
+        # print(self.name, " : ", now)
         stream_name = self.upstream_socket_map[stream.socket] # Now we have the name of our stream!
         #print(len(msg))
         raw_data = msg[0] # For Reaons beyond me, this is an array of data.
@@ -56,8 +59,8 @@ class Manager(Node):
             with open(os.path.join(os.getcwd() + "/config/generated/" + self.system_name + "/ticker/"  + filename), 'r') as config:
                 raw_config = json.load(config)
                 self.ticker_configs[raw_config["name"]] = raw_config
-        print(self.market_configs)
-        print(self.ticker_configs)
+        #print(self.market_configs)
+        #print(self.ticker_configs)
 
     def setup_upstream(self):
         for market in self.market_configs.keys():

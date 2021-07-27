@@ -28,7 +28,7 @@ class BinanceTrader(BinanceNode):
         try:
             with open("config/generated/" + self.system_name + "/trader/" + self.system_name + ".json") as config:
                 raw_config = json.load(config)
-                print(raw_config)
+                #print(raw_config)
                 self.config = raw_config
         except FileNotFoundError:
             print("config/generated/" + self.system_name + "/trader/" + self.system_name + ".json")
@@ -58,9 +58,9 @@ class BinanceTrader(BinanceNode):
                 if account_result["trade_type"] == 0b1 << 3:
                     now = datetime.now().time()
                     print(self.name, " : ", now)
-                    order = self.client.order_market_buy(
-                    symbol=account_result["symbol"],
-                    quantity=account_result["quantity"])
+                    # order = self.client.order_market_buy(
+                    # symbol=account_result["symbol"],
+                    # quantity=account_result["quantity"])
                     # Did You know you can track the status of your order?
                     # That's right. Every Order that is created gets an ID.
 
@@ -73,13 +73,13 @@ class BinanceTrader(BinanceNode):
                     #    time.sleep(1)
 
                     # This is blocking. but will be solved in the websocket update
-                    order = self.client.create_oco_order(
-                    symbol= account_result["symbol"],
-                    side=SIDE_SELL,
-                    stopLimitTimeInForce=TIME_IN_FORCE_GTC,
-                    quantity=account_result["quantity"],
-                    stopPrice=account_result["stop_price"],
-                    price=account_result["target_price"])
+                    # order = self.client.create_oco_order(
+                    # symbol= account_result["symbol"],
+                    # side=SIDE_SELL,
+                    # stopLimitTimeInForce=TIME_IN_FORCE_GTC,
+                    # quantity=account_result["quantity"],
+                    # stopPrice=account_result["stop_price"],
+                    # price=account_result["target_price"])
             except Exception as e:
                 pass
                 print(e)
