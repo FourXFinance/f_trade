@@ -17,8 +17,8 @@ class Ticker(Node):
         super().__init__(system_name, self.name)
         self.algorithm_config = {}
         self.setup()
+
     def setup(self):
-        
         self.load_config()
         self.setup_upstream()
         self.setup_downstream()
@@ -71,7 +71,7 @@ class Ticker(Node):
     def clean_algorithm(self):
         pass
     def run(self):
-        
+        ioloop.IOLoop.instance().start()
         upstreams = self.upstream_controller.get_streams()
         upstream_socket_map = {}
         for stream in upstreams.keys():

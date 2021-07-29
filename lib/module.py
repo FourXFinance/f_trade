@@ -15,22 +15,33 @@ class Node:
         self.system_name = system_name
         self.context = zmq.Context()
         self.name = name
+        self.logging_enabled = False
+
+        # A controller is a group of streams. 
         self.upstream_controller = Controller()
         self.downstream_controller = Controller()
         self.executive_controller = Controller()
         self.logging_controller = Controller()
         self.heartbeat_controller = Controller()
-        self.identifier = uuid.uuid4() # This 'might' be used for loggin purposes later on.        
-        signal.signal(signal.SIGINT, self.shutdown)
-        self.logging_controller.add_stream("LOG", 10000, zmq.PUB, topic="0", bind=False, register=False)
 
-    
+        # A Default Controller
+        self.default_controller = Controller()
+        self.identifier = uuid.uuid4() # This 'might' be used for loggin purposes later on.
+
+
+        signal.signal(signal.SIGINT, self.shutdown)
+        if self.logging_enabled:
+            self.logging_controller.add_stream("LOG", 10000, zmq.PUB, topic="0", bind=False, register=False)
+
+
     def setup_heartbeat(self, override_port=None):
+        #print("Setting Up Heartbeat " + self.name)
         port = None
         if override_port != None: #The Manager Node does not have a generated config. TODO: Create Config for Manager Node. Even if it is just it's heartbeat port
             port = override_port
         else:
             port = self.config["heartbeat_port"]
+        #print(port)
         self.heartbeat_controller.add_stream("HEARTBEAT", port, zmq.PAIR, topic="0", bind=True, register=False)
         socket = self.heartbeat_controller.get_stream_raw("HEARTBEAT")
         stream_sub = zmqstream.ZMQStream(socket)
@@ -52,25 +63,27 @@ class Node:
     
     def handle_executive(self, stream, msg):
         """handle_executive. How do we action and respond to messages from the executive controller"""
-        message = msg[0].decode('UTF-8')
-        if message == "START":
-            ioloop.IOLoop.instance().start()
-            self.heartbeat_controller.send_to("HEARTBEAT", {
-                "name" : self.name,
-                "response" : "starting",
-                "ts" : str(now)
-                }
-            ) 
+        pass
+            
+    def add_stream(self, name, port, type, topic="0", bind=False, register=False):
+        """
+        Add a Stream to the nodes default_controller
+        This is generally not recommended. But sometimes streams don't fall into nice catagories
+        """
+        self.default_controller.add_stream(name, port, type, topic, bind, register)
     def add_upstream(self, name, port, type, topic="0", bind=False, register=False):
+        """Add a Stream to the nodes upstream_controller"""
         self.upstream_controller.add_stream(name, port, type, topic, bind, register)
         
     def add_downstream(self, name, port, type, topic="0", bind=False, register=False):
+        """Add a Stream to the nodes downstream_controller"""
         self.downstream_controller.add_stream(name, port, type, topic, bind, register)
 
     def enable(self):
-        self.enabled = True
+        raise Exception("Override Me!");
 
     def disable(self):
+        # TODO: Disable should do something
         self.enabled = False
 
     def recv(self):
@@ -83,7 +96,7 @@ class Node:
         #TODO: Iterate through all controllers to find target stream
         
         result = self.downstream_controller.send_to(stream_name, message, topic)
-        if result:
+        if result and self.logging_enabled:
             self.logging_controller.send_to("LOG", str(self.identifier) + message) # Not Sure what else do to with logging. Add PORT!
 
     def consume_next(self):
@@ -125,7 +138,7 @@ class Algorithm(Node):
     def load_config(self):
         try:
             with open("config/generated/" + self.system_name + "/algorithm/" + self.ticker + "/" + self.name + ".json") as config:
-                self.config_raw = json.load(config)
+                self.config = json.load(config)
                 
                 #print(self.config_raw)
         except FileNotFoundError:
@@ -134,14 +147,15 @@ class Algorithm(Node):
     def setup(self):
         self.load_config()
         self.configure()
+        self.setup_heartbeat();
 
     def configure(self):
         self.upstream_controller.add_stream("DATA", 
-            self.config_raw["algorithm_port"], 
+            self.config["algorithm_port"], 
             zmq.SUB)
 
         self.downstream_controller.add_stream("PROXY", 
-            self.config_raw["proxy_port"], 
+            self.config["proxy_port"], 
             zmq.PUB)
         
     def run():

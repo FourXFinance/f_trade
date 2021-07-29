@@ -56,6 +56,8 @@ class Controller:
     def get_streams(self):
         return self.streams
     
+    def get_streams_list(self):
+        return self.streams.keys()
     # Communication Methods
     # Designed to be invarient of underlying stream type
 

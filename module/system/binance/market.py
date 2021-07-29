@@ -23,12 +23,12 @@ class MarketWorker(BinanceNode):
         self.interval = interval
         self.tickers_with_topic = {}
         super().__init__(system_name, self.name, create_connection=False) # We create an ASYNC Conneciton. NOT SYNC
-        self.setup()
-        self.load_secrets()                
+        self.setup()              
 
     def setup(self):
         self.load_config()
         self.setup_downstream()
+        self.setup_heartbeat(self.heartbeat_port)
 
     def load_config(self):
         try:
@@ -37,6 +37,9 @@ class MarketWorker(BinanceNode):
                 #print(raw_credentials)
                 sources = raw_credentials["sources"]
                 self.port = sources[self.interval]
+                heartbeat_sources = raw_credentials["heartbeat_port"]
+                self.heartbeat_port = heartbeat_sources[self.interval]
+
                 self.mappings = raw_credentials['tracked_tickers']
         except FileNotFoundError:
             print("config/generated/" + self.system_name + "/market/" + self.market_name + ".json")
@@ -99,6 +102,7 @@ class MarketWorker(BinanceNode):
         await asyncio.gather(* [self.get_data_for_ticker(ticker) for ticker in self.tickers])
     async def run(self):
         tick_count = 0
+        
         await self.create_market_connection()
         while True:
             # TODO: Make This an Event Loop!!!!

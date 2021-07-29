@@ -13,6 +13,7 @@ from binance import Client, ThreadedWebsocketManager
 import numpy as np
 import pandas as pd
 import math
+from zmq.eventloop import ioloop, zmqstream
 from binance.enums import *
 
 class Account(BinanceNode):
@@ -32,7 +33,8 @@ class Account(BinanceNode):
         self.load_config()
         self.setup_upstream()
         self.setup_downstream()
-        self.get_ticker_config_from_market()
+        self.setup_heartbeat()
+        #self.get_ticker_config_from_market() # This Must Happen on ENable!
 
     def load_config(self):
         try:
@@ -40,6 +42,7 @@ class Account(BinanceNode):
                 raw_credentials = json.load(config)
                 #print(raw_credentials)
                 self.config = raw_credentials
+                #print(self.config)
         except FileNotFoundError:
             print("config/generated/" + self.system_name + "/account/" + self.market_name + ".json")
             raise FileNotFoundError
@@ -95,6 +98,7 @@ class Account(BinanceNode):
 
 
     def run(self):
+        ioloop.IOLoop.instance().start()
         # TODO: Get Clock Signal from Executive!
         # If the above functions pass, we are ready to start consuming information
         # Accounts should wait for an algorithm to be ready. Then it will fetch new account data.

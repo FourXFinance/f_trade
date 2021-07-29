@@ -14,6 +14,7 @@ import pandas as pd
 import json
 import sys
 import csv
+from zmq.eventloop import ioloop, zmqstream
 from datetime import datetime
 from util import bcolors
 
@@ -45,6 +46,7 @@ class AlwaysBuy(Algorithm):
         self.downstream_controller.send_to("PROXY", json.dumps(message))
             
     def run(self):
+        ioloop.IOLoop.instance().start()
         while True:
             if not self.test_mode:
                 raw_data = self.recv_from("DATA").decode('UTF-8')

@@ -43,4 +43,18 @@ class Sleep(Enum):
     SLEEP_12H =  (720 * minute) - 1
     SLEEP_1D =  (1440 * minute) - 1
 
+class NodeModes(Enum):
+    START_UP_AWAITING_PING = 0b1
+    START_UP_AWAITING_EXEC = 0b1 << 1
+    OK = 0b1 << 2
+    ERROR = 0b1 << 3
+
+class SystemModes(Enum):
+    TEST_STARTING_UP = 0b1
+    STARTING_UP = 0b1 << 1
+    OK = 0b1 << 2
+    ERROR = 0b1 << 3
+    
+
+    
 

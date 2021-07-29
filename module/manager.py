@@ -30,8 +30,7 @@ class Manager(Node):
         self.setup_upstream()
         self.setup_downstream()
         self.config = {}
-        self.config["heartbeat_port"] = 13999 # FIX THIS
-        self.setup_heartbeat()
+        self.setup_heartbeat(self.heartbeat_port)
         #TODO Map Bindings of Ticker to Port.
 
     def process_message(self, stream, msg):
@@ -46,6 +45,12 @@ class Manager(Node):
     def load_configs(self):
         # Manager Node needs two configs to work: Traders and Market
 
+
+        # Load Market Configs
+        with open(os.path.join(os.getcwd()+ "/config/generated/" + self.system_name + "/manager/"  + "manager.json"), 'r') as config:
+                raw_config = json.load(config)
+                self.heartbeat_port = raw_config["heartbeat_port"];
+                
         # Load Market Configs
         for filename in os.listdir(os.getcwd() + "/config/generated/" + self.system_name + "/market"):
             with open(os.path.join(os.getcwd()+ "/config/generated/" + self.system_name + "/market/"  + filename), 'r') as config:

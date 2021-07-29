@@ -12,6 +12,8 @@ from binance import Client, ThreadedWebsocketManager, AsyncClient
 import asyncio
 import numpy as np
 import pandas as pd
+import asyncio
+from zmq.eventloop import ioloop, zmqstream
 from binance.enums import *
 
 class BinanceTrader(BinanceNode):
@@ -23,6 +25,7 @@ class BinanceTrader(BinanceNode):
     def setup(self):
         self.load_config()
         self.setup_upstream()
+        self.setup_heartbeat()
 
     def load_config(self):
         try:
@@ -49,6 +52,7 @@ class BinanceTrader(BinanceNode):
         pass
 
     def run(self):
+        ioloop.IOLoop.instance().start()
         while True:
             try:
                 raw_data = self.recv_from("DATA").decode('UTF-8')

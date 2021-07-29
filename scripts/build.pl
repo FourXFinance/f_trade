@@ -11,31 +11,62 @@ use Storable 'dclone';
 # print "Error: Root Permissions Required\n" unless not $>;
 # exit (-1) unless not $>;
 # TODO: These functions should probably be in a more reusable module, but Perl modules suck
+
+use Getopt::Std;
+
+use vars qw($opt_t $opt_s);
+
+getopts("ts:");
+
+my $std_tty = 'null';
+my $std_err_tty = 'null';
+
+print($opt_t."\n");
+print($opt_s."\n");
+my $cur_dir = getcwd;
+if (defined $opt_t){
+    print color('magenta');
+    print ("Test Mode Enabled\n");
+    $std_tty = 'tty';
+    $std_err_tty = 'tty';   
+}
+my $system_name = undef;
+if (defined $opt_s){
+    $system_name = $opt_s;
+}
+#my $ports_to_skip = {"14010" => 1}''
+
 sub ping_node {
-    my $target_node = shift;
+    my $target_node_port = shift;
+    my $target_node_name = shift;
     print color('green');
     # This is not just for look. Some Time needed to allow the system to start up.
-    system("sleep 0.01");
-    print(".");
-    system("sleep 0.01");
-    print(".");
-    system("sleep 0.01");
-    print(".");
-    system("sleep 0.01");
-    print color('bold green');
-    print("\t✓\n");
+    #my $res = `perl $cur_dir/scripts/ping.pl -s -t $target_node_port -m 5 &`;
+    system("perl $cur_dir/scripts/ping.pl -s -t $target_node_port -m 5 -q");
+    if ($? >> 8) {
+        print color('red'); 
+        print "Failed Heartbeat: $target_node_name ($target_node_port)\n";
+        exit(-1);
+     } else {
+         print "Succesful Heartbeat: $target_node_name ($target_node_port)\n";
+     }
+    #system("sleep 0.01");
+    #print(".");
+    #system("sleep 0.01");
+    #print(".");
+    #system("sleep 0.01");
+    #print(".");
+    #system("sleep 0.01");
+    #print color('bold green');
+    #print("\t✓\n");
 }
-die "System Name not provded" unless @ARGV;
-my ($system_name) = lcfirst shift;
-
 if (not defined $system_name) {
     die "System Name not provided";
 }
 
 #TTY
 
-my $std_tty = 'tty';
-my $std_err_tty = 'tty';
+
 my $config;
 my $system_config = {};
 my $ticker_config = {};
@@ -60,7 +91,7 @@ my $node_delay = 0.3;
 my $f = "%-30s%-30s\n";
 
 
-my $cur_dir = getcwd;
+
 system("perl $cur_dir/scripts/shutdown.pl");
 # Validate System Config
 $system_config= $config->{system};
@@ -176,6 +207,10 @@ printf("$f", "Error:" , "No Tickers Defined") and die ("Startup Error") unless $
 printf("$f", "Step $step_count:" , "Checking Ticker Configuration");
 my $ticker_count = 0;
 my $topic = 0;
+
+
+$manager_config->{heartbeat_port} = $current_heartbeat_port;
+$current_heartbeat_port+=1;
 for my $ticker (@$tickers) {
     my $ticker_enabled = $ticker->{enabled};
     next if $ticker_enabled eq "False";
@@ -264,6 +299,16 @@ $step_count+=1;
 printf("$f", "Step $step_count:" , "Creating F_Trader System");
 printf("$f", "Step $step_count.$sub_count:" , "Writting Node Configs");
 
+
+# Build Manager Configs
+qx\mkdir ./config/generated/$system_name/manager/\;
+    my $manager = $manager_config;
+    my $json = encode_json $manager;
+    qx\touch ./config/generated/$system_name/manager/manager.json\;
+    open(FH, '>', "./config/generated/$system_name/manager/manager.json") or die $!;
+    print FH $json;
+    close(FH);
+
 # Build Market Configs
 qx\mkdir ./config/generated/$system_name/market/\;
 for my $market_name  (keys %$market_config) {
@@ -339,7 +384,8 @@ close(FH);
 # Build Trader Configs
 qx\mkdir ./config/generated/$system_name/trader/\;
 my $trader_config = {
-    trader_proxy_port => $trader_proxy_port
+    trader_proxy_port => $trader_proxy_port,
+    heartbeat_port => $current_heartbeat_port
 };
 $json = encode_json $trader_config;
 qx\touch ./config/generated/$system_name/trader/$system_name.json\;
@@ -385,6 +431,7 @@ print("Starting Market Nodes\n");
 foreach (keys %$market_config) {
     my $market_name = $_;
     my $market_sources = $market_config->{$_}->{sources};
+    my $market_heartbeat =$market_config->{$_}->{heartbeat_port};
     
     foreach (keys %$market_sources) {
         #print ($cur_dir."/module/system/$market_name/market.py \n");
@@ -408,17 +455,19 @@ foreach (keys %$market_config) {
             #print("$pid");
             # TODO: Communicate with The Node and get a heartbeat back. If unable, Fail
             # We assume we always pass
-            ping_node();
+            ping_node($market_heartbeat->{$_}, "$system_name.$market_name.$_");
+            #exit();
         }
     }
 }
+#exit();
 print color('green');
 print ("All Markets have Started\n");
 
 print color('bold yellow');
 print ("Starting Manager Node\n");
 print color('bold blue');
-        print("Starting: Manager");
+        print("Starting: Manager ");
         $pgroup+=1;
         my $pid=fork(); # TODO: Yea, We fork the current process and create a new one. But we do not assign 'new' file handlers
 	    die "Cannot fork: $!" if (! defined $pid);
@@ -437,7 +486,7 @@ print color('bold blue');
             #print("$pid");
             # TODO: Communicate with The Node and get a heartbeat back. If unable, Fail
             # We assume we always pass
-            ping_node();
+            ping_node($manager_config->{heartbeat_port}, "$system_name.manager");
         }
 #TODO: Communicate Directly With Node to get Status. Then Move onto next node
 print color('green');
@@ -453,7 +502,7 @@ foreach (keys %$ticker_config) {
 	    die "Cannot fork: $!" if (! defined $pid);
         if (! $pid) {
             setpgrp;
-		# Only the child does this\
+		# Only the child does this
             eval{
                 #TODO: Explain What is going onhere
                 exec("python3 $cur_dir/module/ticker.py $system_name $ticker_name  >> /dev/$std_tty 2>> /dev/$std_err_tty &");
@@ -466,7 +515,7 @@ foreach (keys %$ticker_config) {
             #print("$pid");
             # TODO: Communicate with The Node and get a heartbeat back. If unable, Fail
             # We assume we always pass
-            ping_node();
+            ping_node($ticker_config->{$_}->{heartbeat_port}, "$system_name.$_");
         }
 }
 
@@ -499,7 +548,7 @@ foreach (keys %$algorithm_config) {
             #print("$pid");
             # TODO: Communicate with The Node and get a heartbeat back. If unable, Fail
             # We assume we always pass
-            ping_node();
+            ping_node($algorithm_config->{$ticker_name}->{$_}->{heartbeat_port}, "$system_name.$ticker_name.$_");
         }
     }
 }
@@ -530,7 +579,7 @@ foreach (keys %$proxy_config) {
             #print("$pid");
             # TODO: Communicate with The Node and get a heartbeat back. If unable, Fail
             # We assume we always pass
-            ping_node();
+            #ping_node(); We do not ping proxies (yet)
         }
 }
 print color('green');
@@ -561,7 +610,8 @@ foreach (keys %$account_config) {
             #print("$pid");
             # TODO: Communicate with The Node and get a heartbeat back. If unable, Fail
             # We assume we always pass
-            ping_node();
+            #print(Dumper($account_config));
+            ping_node($account_config->{$ticker_name}->{heartbeat_port}, "$system_name.$ticker_name.account");
         }
 }
 print color('green');
@@ -587,7 +637,7 @@ if (! $pid) {
     #print("$pid");
     # TODO: Communicate with The Node and get a heartbeat back. If unable, Fail
     # We assume we always pass
-    ping_node();
+    #ping_node(); No Ping Broker (Just Yet)
 }
 print("Starting Trader\n");
 $pid=fork(); # TODO: Yea, We fork the current process and create a new one. But we do not assign 'new' file handlers
@@ -609,7 +659,7 @@ if (! $pid) {
     #print("$pid");
     # TODO: Communicate with The Node and get a heartbeat back. If unable, Fail
     # We assume we always pass
-    ping_node();
+    ping_node($trader_config->{heartbeat_port}, "$system_name.trader");
 }
 print color('green');
 print ("All Brokers And Traders have Started\n");
