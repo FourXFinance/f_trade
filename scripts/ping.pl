@@ -27,46 +27,46 @@ $CONNECTION->send("PING");
 my $iterate_count = -1;
 my $was_success = 0;
 
-my $client_name = undef; 
+my $client_name = undef;
 usleep(300 * 1000 * 1);
-$| = 1; # Clears the IO buffer. 
+$| = 1; # Clears the IO buffer.
 while (1) {
 
-    PROCESS_UPDATE:
-    while (1) {
-        try {
-            my $msg = $CONNECTION->recv(ZMQ_DONTWAIT);
-            print($msg."\n") unless defined $opt_s;
-            $was_success = 1;
-        }
-        catch {
-            last PROCESS_UPDATE;
-        }
-    }
+  PROCESS_UPDATE:
+	while (1) {
+		try {
+			my $msg = $CONNECTION->recv(ZMQ_DONTWAIT);
+			print($msg."\n") unless defined $opt_s;
+			$was_success = 1;
+		}catch {
+			last PROCESS_UPDATE;
+		}
+	}
 
-    if($was_success){
-        last;
-    }
-    if ($iterate_count == $max_count) {
-        #We Timeout!
-        last;
-    } else {
-        
-        $iterate_count +=1;
-        if($iterate_count > 0){
-            print("Trying Again: ($iterate_count/$max_count)\n") unless defined $opt_s;
-        }
-        if ($opt_q) {
-            usleep(100 * 1000 * 1);
-        } else {
-            usleep(1000 * 1000 * 1);
-        }
-        
-    }
-    
+	if($was_success){
+		last;
+	}
+	if ($iterate_count == $max_count) {
+
+		#We Timeout!
+		last;
+	} else {
+
+		$iterate_count +=1;
+		if($iterate_count > 0){
+			print("Trying Again: ($iterate_count/$max_count)\n") unless defined $opt_s;
+		}
+		if ($opt_q) {
+			usleep(100 * 1000 * 1);
+		} else {
+			usleep(1000 * 1000 * 1);
+		}
+
+	}
+
 }
 if ($was_success){
-    exit 0;
+	exit 0;
 } else {
-    exit 1;
+	exit 1;
 }
