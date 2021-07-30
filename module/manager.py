@@ -36,7 +36,7 @@ class Manager(Node):
         raw_data = msg[0]  # For Reaons beyond me, this is an array of data.
         data = {'topic': raw_data[:1], 'message': raw_data[1:]}
         message = pd.read_json(data["message"])
-        #print(message)
+        print(message)
         self.downstream_controller.send_to(stream_name, message.to_json())
 
     def load_configs(self):

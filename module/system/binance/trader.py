@@ -51,6 +51,8 @@ class BinanceTrader(BinanceNode):
     def submit_order(self):
         pass
 
+    def iterate(self, stream, msg):
+        pass
     def run(self):
         ioloop.IOLoop.instance().start()
         while True:

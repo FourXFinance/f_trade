@@ -37,11 +37,10 @@ class Account(BinanceNode):
         self.build_mappings()
         #self.get_ticker_config_from_market() # This Must Happen on Enable!
     def iterate(self, stream,  msg):
-        raw_data = msg[0]  # For Reaons beyond me, this is an array of data.
+        raw_data = msg[0].decode('utf-8')  # For Reaons beyond me, this is an array of data.
         data = {'topic': raw_data[:1], 'message': raw_data[1:]}
-        message = pd.read_json(data["message"])
-        print(message)
-        algorithm_result = message
+        print(data['message'])
+        algorithm_result = dict(data['message'])
         if algorithm_result["trade_type"] == 0b1 << 3:
             now = datetime.now().time()
             #print(self.name, " : ", now)

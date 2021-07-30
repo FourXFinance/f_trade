@@ -49,7 +49,8 @@ class AlwaysBuy(Algorithm):
         message["ticker_price"] = 0.0000050 # This should come from the Ticker Module!
         message["stop_price"] = 0.0000040 # This should come from the Ticker Module!
         message["target_price"] = 0.55 # This should come from the Ticker Module!
-        self.downstream_controller.send_to("PROXY", json.dumps(message))
+        print(message)
+        self.downstream_controller.send_to("PROXY", message)
 
     def clean(self):
         pass

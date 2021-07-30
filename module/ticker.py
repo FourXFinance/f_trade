@@ -39,7 +39,7 @@ class Ticker(Node):
             with open(os.path.join(os.getcwd() + "/config/generated/" + self.system_name + "/algorithm/"  + self.ticker_name + "/" + filename), 'r') as config:
                 raw_config = json.load(config)
                 self.algorithm_config[raw_config["algorithm_name"]] = raw_config
-        #print(self.algorithm_config)
+        print(self.algorithm_config)
 
     def setup_upstream(self):
         required_sources = self.config["required_sources"]
@@ -80,7 +80,7 @@ class Ticker(Node):
         # print(self.upstream_socket_map)
         # print(self.downstream_name_map)
         # Now we have the name of our stream!
-        raw_data = msg[0]  # For Reaons beyond me, this is an array of data.
+        raw_data = msg[0].decode("utf-8")  # For Reaons beyond me, this is an array of data.
         data = {'topic': raw_data[:1], 'message': raw_data[1:]}
         message = pd.read_json(data["message"])
         print(message)
