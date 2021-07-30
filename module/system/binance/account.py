@@ -34,8 +34,40 @@ class Account(BinanceNode):
         self.setup_upstream()
         self.setup_downstream()
         self.setup_heartbeat()
+        self.build_mappings()
         #self.get_ticker_config_from_market() # This Must Happen on Enable!
-
+    def iterate(self, stream,  msg):
+        raw_data = msg[0]  # For Reaons beyond me, this is an array of data.
+        data = {'topic': raw_data[:1], 'message': raw_data[1:]}
+        message = pd.read_json(data["message"])
+        print(message)
+        algorithm_result = message
+        if algorithm_result["trade_type"] == 0b1 << 3:
+            now = datetime.now().time()
+            #print(self.name, " : ", now)
+            # Buy With Sell
+            message = {}
+            message["symbol"] = self.ticker_name
+            price = algorithm_result["ticker_price"] # 0.25
+            quantity = round(self.lot_size / price, self.precision)
+            message["quantity"] =  quantity
+            message["target_price"] = algorithm_result["target_price"]
+            message["stop_price"] = algorithm_result["stop_price"]
+            message["trade_type"] = algorithm_result["trade_type"]
+            #print(message)
+            self.downstream_controller.send_to("PROXY", json.dumps(message));
+        # Check to see if we have too many open trades or not
+        if self.open_trades >= self.max_open_trades:
+            orders = self.get_open_orders()
+            self.open_trades = len(orders)
+        if self.open_trades >= self.max_open_trades:
+            # Sorry, nothing to do here! We have exausted the maximum number of open trades
+            # TODO: Log Abandoned Trade
+            pass
+        else:
+            # We're In Business
+            self.downstream_controller.send_to("PROXY", json.dumps(data["message"]));
+            
     def load_config(self):
         try:
             with open("config/generated/" + self.system_name + "/account/" + self.ticker_name + ".json") as config:
@@ -56,6 +88,11 @@ class Account(BinanceNode):
                             bind=False,
                             register=False
                         )
+        socket = self.upstream_controller.get_stream_raw("DATA")
+        stream_sub = zmqstream.ZMQStream(socket)
+        stream_sub.on_recv_stream(self.iterate)
+
+
     def setup_downstream(self):
         broker_proxy_port = self.config["broker_proxy_port"]
         self.downstream_controller.add_stream( 
@@ -99,40 +136,7 @@ class Account(BinanceNode):
 
     def run(self):
         ioloop.IOLoop.instance().start()
-        # TODO: Get Clock Signal from Executive!
-        # If the above functions pass, we are ready to start consuming information
-        # Accounts should wait for an algorithm to be ready. Then it will fetch new account data.
-        while True:
-            raw_data = self.upstream_controller.recv_from("DATA").decode('UTF-8')
-            data = {'topic': raw_data[:1], 'message':raw_data[1:]}
-            algorithm_result = json.loads(data["message"])
-            if algorithm_result["trade_type"] == 0b1 << 3:
-                now = datetime.now().time()
-                #print(self.name, " : ", now)
-                # Buy With Sell
-                message = {}
-                message["symbol"] = self.ticker_name
-                price = algorithm_result["ticker_price"] # 0.25
-                quantity = round(self.lot_size / price, self.precision)
-                message["quantity"] =  quantity
-                message["target_price"] = algorithm_result["target_price"]
-                message["stop_price"] = algorithm_result["stop_price"]
-                message["trade_type"] = algorithm_result["trade_type"]
-                #print(message)
-                self.downstream_controller.send_to("PROXY", json.dumps(message));
-            # Check to see if we have too many open trades or not
-            if self.open_trades >= self.max_open_trades:
-                orders = self.get_open_orders()
-                self.open_trades = len(orders)
-            if self.open_trades >= self.max_open_trades:
-                # Sorry, nothing to do here! We have exausted the maximum number of open trades
-                # TODO: Log Abandoned Trade
-                continue
-            else:
-                # We're In Business
-                self.downstream_controller.send_to("PROXY", json.dumps(data["message"]));
-                    
-        
+
             
 if __name__ == "__main__":
     A = Account(sys.argv[1], sys.argv[2])

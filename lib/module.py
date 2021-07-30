@@ -210,6 +210,10 @@ class Algorithm(Node):
         self.upstream_controller.add_stream("DATA",
                                             self.config["algorithm_port"],
                                             zmq.SUB)
+        #TODO: We have 1 input Stream for N data sources. Let's change this to a 1:! mapping                                            
+        socket = self.upstream_controller.get_stream_raw("DATA")
+        stream_sub = zmqstream.ZMQStream(socket)
+        stream_sub.on_recv_stream(self.iterate)
 
         self.downstream_controller.add_stream("PROXY",
                                               self.config["proxy_port"],
@@ -261,6 +265,7 @@ class Proxy(Node):
             bind=True,
             register=False
         )
+        
 
     def setup_downstream(self):
         account_proxy_port = self.config["account_proxy_port"]

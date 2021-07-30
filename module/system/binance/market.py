@@ -12,6 +12,7 @@ import json
 from datetime import datetime
 import time
 from binance import Client, ThreadedWebsocketManager, AsyncClient
+from zmq.eventloop import ioloop, zmqstream
 import asyncio
 # This is a tick Node. You will run one of these for every time interval
 
@@ -85,6 +86,8 @@ class MarketWorker(BinanceNode):
         df = pd.DataFrame(data=recent_trades)
         #print(df.to_json())
         #print(ticker_name + "\t" + str(self.tickers_with_topic[ticker_name]))
+        now = datetime.now().time()
+        print(self.name, " : ", now)
         self.send_to(self.interval, df.to_json(), topic=self.tickers_with_topic[ticker_name])
 
     async def get_data_for_ticker(self, ticker):
@@ -102,7 +105,6 @@ class MarketWorker(BinanceNode):
         await asyncio.gather(* [self.get_data_for_ticker(ticker) for ticker in self.tickers])
     async def run(self):
         tick_count = 0
-        
         await self.create_market_connection()
         while True:
             # TODO: Make This an Event Loop!!!!

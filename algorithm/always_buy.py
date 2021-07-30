@@ -29,9 +29,28 @@ class AlwaysBuy(Algorithm):
         pass
     def setup_config(self):
         pass
-    def iterate(self):
-        # To Be Used for Callbacks! - Coming Soon!!!
-        pass
+    def iterate(self, stream, msg):
+        raw_data = msg[0]  # For Reaons beyond me, this is an array of data.
+        #print(raw_data)
+        #data = {'topic': raw_data[:1], 'message': raw_data[1:]}
+        #message = pd.read_json(data["message"])
+        #print (raw_data)
+        #data = {'topic': raw_data[:1], 'message':raw_data[1:]}
+        #message = pd.read_json(data["message"])
+        #decision = self.check(message)            
+        #print(data["message"])##
+        #time.sleep(1) # Let's not be too hasty
+        message = {}
+        now = datetime.now().time()
+        print(self.name, " : ", now)
+        message["weight"] = 0
+        message["ticker_name"] = self.ticker_name
+        message["trade_type"] = 0b1 << 3
+        message["ticker_price"] = 0.0000050 # This should come from the Ticker Module!
+        message["stop_price"] = 0.0000040 # This should come from the Ticker Module!
+        message["target_price"] = 0.55 # This should come from the Ticker Module!
+        self.downstream_controller.send_to("PROXY", json.dumps(message))
+
     def clean(self):
         pass
     def check(self, data):
