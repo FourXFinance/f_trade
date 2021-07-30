@@ -34,7 +34,7 @@ class Account(BinanceNode):
         self.setup_upstream()
         self.setup_downstream()
         self.setup_heartbeat()
-        #self.get_ticker_config_from_market() # This Must Happen on ENable!
+        #self.get_ticker_config_from_market() # This Must Happen on Enable!
 
     def load_config(self):
         try:

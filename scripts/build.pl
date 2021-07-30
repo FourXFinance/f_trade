@@ -1,4 +1,6 @@
 #!/usr/bin/perl
+
+# This script builds the f_trader system
 use strict;
 use warnings;
 use YAML::XS 'LoadFile';
@@ -7,42 +9,35 @@ use Data::Dumper;
 use Term::ANSIColor;
 use Cwd;
 use Storable 'dclone';
-
-# print "Error: Root Permissions Required\n" unless not $>;
-# exit (-1) unless not $>;
-# TODO: These functions should probably be in a more reusable module, but Perl modules suck
-
 use Getopt::Std;
-
 use vars qw($opt_t $opt_s);
-
 getopts("ts:");
 
 my $std_tty = 'null';
 my $std_err_tty = 'null';
-
-print($opt_t."\n");
-print($opt_s."\n");
 my $cur_dir = getcwd;
+my $system_name = undef;
+# Format Strings
+my $f = "%-40s%30s\n";
+
 if (defined $opt_t){
     print color('magenta');
     print ("Test Mode Enabled\n");
     $std_tty = 'tty';
     $std_err_tty = 'tty';   
 }
-my $system_name = undef;
+
 if (defined $opt_s){
     $system_name = $opt_s;
+} else {
+    die "System Name not provided";
 }
-#my $ports_to_skip = {"14010" => 1}''
 
 sub ping_node {
     my $target_node_port = shift;
     my $target_node_name = shift;
     print color('green');
-    # This is not just for look. Some Time needed to allow the system to start up.
-    #my $res = `perl $cur_dir/scripts/ping.pl -s -t $target_node_port -m 5 &`;
-    system("perl $cur_dir/scripts/ping.pl -s -t $target_node_port -m 5 -q");
+    system("perl $cur_dir/scripts/ping.pl -s -t $target_node_port -m 15");
     if ($? >> 8) {
         print color('red'); 
         print "Failed Heartbeat: $target_node_name ($target_node_port)\n";
@@ -50,22 +45,7 @@ sub ping_node {
      } else {
          print "Succesful Heartbeat: $target_node_name ($target_node_port)\n";
      }
-    #system("sleep 0.01");
-    #print(".");
-    #system("sleep 0.01");
-    #print(".");
-    #system("sleep 0.01");
-    #print(".");
-    #system("sleep 0.01");
-    #print color('bold green');
-    #print("\t✓\n");
 }
-if (not defined $system_name) {
-    die "System Name not provided";
-}
-
-#TTY
-
 
 my $config;
 my $system_config = {};
@@ -73,8 +53,10 @@ my $ticker_config = {};
 my $algorithm_config = {};
 my $proxy_config = {};
 my $account_config = {};
-#my $trader_config = {};
+my $trader_config = {};
 my $manager_config = {};
+
+# Load the Config of the specified system. or Die
 eval  {
     $config = LoadFile("config/system/$system_name.yaml");
     1;
@@ -82,16 +64,6 @@ eval  {
     my $error = $@ || "Zombie Error";
     die "Error Loading System Config: $error";
 };
-
-
-my $step_count = 1;
-my $sub_count = 1;
-my $sub_sub_count = 1;
-my $node_delay = 0.3;
-my $f = "%-30s%-30s\n";
-
-
-
 system("perl $cur_dir/scripts/shutdown.pl");
 # Validate System Config
 $system_config= $config->{system};
@@ -111,6 +83,7 @@ my $config_name = $system_config->{name};
 
 printf("$f", "Warn:" , "No System Name Defined") unless $config_name;
 $config_name ||= "UNDEFINED";
+
 printf("$f", "System Name:" , $config_name);
 my $test_mode = $system_config->{test} // "False";
 printf("$f", "Test Mode:" , $test_mode);
@@ -163,7 +136,6 @@ my $markets = $config->{markets};
 printf("$f", "Error:" , "No Markets Defined") and die ("Startup Error") unless $markets;
 
 
-printf("$f", "Step $step_count:" , "Checking Market Configurations");
 my $current_ticker_port = $base_ticker_port;
 my $current_algorithm_port = $base_algorithm_port;
 my $current_market_base = $base_market_port;
@@ -195,16 +167,12 @@ for my $market (@$markets) {
     };
     
     $current_market_base += $base_market_offset;
-    printf("$f", "Step $step_count.$sub_count:" , "Market '$market_name' has valid Configuration");
-    $sub_count+=1;
-}
-$sub_count=1;
-$step_count+=1;
+    #printf("$f", "Step $step_count.$sub_count:" , "Market '$market_name' has valid Configuration");
 
+}
 my $tickers = $config->{tickers};
 printf("$f", "Error:" , "No Tickers Defined") and die ("Startup Error") unless $tickers;
 
-printf("$f", "Step $step_count:" , "Checking Ticker Configuration");
 my $ticker_count = 0;
 my $topic = 0;
 
@@ -221,6 +189,7 @@ for my $ticker (@$tickers) {
         foreach my $key (keys % {$market_config}){
             $required_sources->{$key} = dclone $market_config->{$key}->{sources};
             foreach(keys %{$required_sources->{$key}}) {
+                # TODO: Whateber nightmare this is. Fix it
                 # print($base_ticker_offset * $ticker_count);
                 # This can 100% be done better
                 $required_sources->{$key}->{$_} += ($base_ticker_port - $base_market_port) + ($base_ticker_offset * $ticker_count);
@@ -229,7 +198,6 @@ for my $ticker (@$tickers) {
     } else {
         #TODO Handle Custom Tick Sources.
     }
-    #print(Dumper($required_sources)."\n");
     $ticker_config->{$ticker_name} = {
         name => $ticker_name,
         upstream_root_port => $current_ticker_port,
@@ -241,8 +209,6 @@ for my $ticker (@$tickers) {
     $current_heartbeat_port+=1;
     push @{$market_config->{'binance'}->{tracked_tickers}}, {$ticker_name => $topic};
     $topic+=1;
-    # my $current_algorithm_port = $current_ticker_port;
-    printf("$f", "Step $step_count.$sub_count:" , "Checking Algorithm Configuration for $ticker_name");
     for my $algorithm (@$ticker_algorithms){
         my $algorithm_enabled = $algorithm->{enabled};
         next if $algorithm_enabled eq "False";
@@ -272,33 +238,20 @@ for my $ticker (@$tickers) {
         heartbeat_port => $current_heartbeat_port,
     };
     $current_heartbeat_port+=1;
-    $sub_count+=1;
+
     $current_algorithm_proxy_port += $base_ticker_offset;
     $current_ticker_port += $base_ticker_offset;
     $current_algorithm_port += $base_ticker_offset;
     $ticker_count +=1;
 }
-$sub_count=1;
-# print(Dumper($algorithm_config));
-# print(Dumper($ticker_config));
-# print(Dumper($market_config));
-# printf("$f", "Success:" , "System Config is Valid");
-# Create Perl Dictionaries of each object
 
-# If Valid, Delete old configs
+# A this tage the system is 'valid'. We now conver these hash maps into json config files for our nodes to load
+
+# Delete Old Configs
+# TODO: Put in a flag for no-delete
 qx\rm -rf ./config/generated\;
 qx\mkdir ./config/generated/\;
 qx\mkdir ./config/generated/$system_name\;
-# if ($? >> 8) {
-#     printf("$f", "WARN:" , "It seems an old instance of the system config exists. Deleting");
-#     qx\rm -rf ./config/generated/$system_name/\;
-#     qx\mkdir ./config/generated/$system_name\;
-# }
-
-$step_count+=1;
-printf("$f", "Step $step_count:" , "Creating F_Trader System");
-printf("$f", "Step $step_count.$sub_count:" , "Writting Node Configs");
-
 
 # Build Manager Configs
 qx\mkdir ./config/generated/$system_name/manager/\;
@@ -319,7 +272,6 @@ for my $market_name  (keys %$market_config) {
     print FH $json;
     close(FH);
 }
-
 
 # Build Ticker Configs
 qx\mkdir ./config/generated/$system_name/ticker/\;
@@ -374,7 +326,7 @@ my $broker_config = {
     broker_proxy_port => $broker_proxy_port,
     trader_proxy_port => $trader_proxy_port
 };
-my $json = encode_json $broker_config;
+$json = encode_json $broker_config;
 qx\touch ./config/generated/$system_name/broker/$system_name.json\;
 open(FH, '>', "./config/generated/$system_name/broker/$system_name.json") or die $!;
 print FH $json;
@@ -383,7 +335,7 @@ close(FH);
 
 # Build Trader Configs
 qx\mkdir ./config/generated/$system_name/trader/\;
-my $trader_config = {
+$trader_config = {
     trader_proxy_port => $trader_proxy_port,
     heartbeat_port => $current_heartbeat_port
 };
@@ -393,167 +345,116 @@ open(FH, '>', "./config/generated/$system_name/trader/$system_name.json") or die
 print FH $json;
 close(FH);
 
-
-# Build Manager Configs # A BETTER WAY TO DO THIS IS TO GET THE MANAGER NODE TO READ FROM Market configs as well as ticker configs.
-# And This is exactly what I intend to do.
-# print (Dumper($market_config));
-# qx\mkdir ./config/generated/$system_name/manager/\;
-# qx\touch ./config/generated/$system_name/manager/manager.json\;
-
-
-# Generate System Config.
-# This lists all nodes and all connections they have. Essentially aggregating it all together. This provides a snapshot of the system
-$sub_count+=1;
-# Startup Order:
-# Create Markets
-# Create 
-# Create Tickers
-# Add Algorithms to Tickers
-# Create Accounts
-
-# Startup each module, they will load data from configs
-
-# TODO: Check if We want to overwrite the old configs
-$sub_count=1;
-$step_count+=1;
-print color('white');
-printf("$f", "Step $step_count" , "Starting Up F_Trader System");
- # How Does the system start up? Quite Simple.
-
- # 1. Start a module
- # TODO 2. Ping a module for liveliness using ping.pl
-
-#print (Dumper($market_config));
-
-my $pgroup = 666;
+# At this stage, all the configuration files (.json) have been created and written to disk. Start each node and ping them
 print color('bold yellow');
 print("Starting Market Nodes\n");
 foreach (keys %$market_config) {
     my $market_name = $_;
     my $market_sources = $market_config->{$_}->{sources};
     my $market_heartbeat =$market_config->{$_}->{heartbeat_port};
-    
+  
     foreach (keys %$market_sources) {
-        #print ($cur_dir."/module/system/$market_name/market.py \n");
         print color('bold blue');
         print("Starting: $market_name ($_) ");
-        $pgroup+=1;
-        my $pid=fork(); # TODO: Yea, We fork the current process and create a new one. But we do not assign 'new' file handlers
+        my $pid=fork();
 	    die "Cannot fork: $!" if (! defined $pid);
         if (! $pid) {
-		# Only the child does this\
-        setpgrp(0, $pgroup);
+		    # Only the child does this
+            setpgrp;
             eval{
-                #TODO: Explain What is going onhere
                 exec("python3 $cur_dir/module/system/$market_name/market.py $system_name $market_name $_ >> /dev/$std_tty 2>> /dev/$std_err_tty &");
                 exit(); # < Technically not possible to reach
                 # NO EXECUTION BELOW THIS POINT!
             };
-       
-		# Only The Parent Does This.
 	    } else {
-            #print("$pid");
-            # TODO: Communicate with The Node and get a heartbeat back. If unable, Fail
-            # We assume we always pass
+            # Only The Parent Does This.
             ping_node($market_heartbeat->{$_}, "$system_name.$market_name.$_");
-            #exit();
         }
     }
 }
-#exit();
-print color('green');
-print ("All Markets have Started\n");
 
+print color('green');
+#print ("All Markets have Started\n");
+print("\n");
 print color('bold yellow');
 print ("Starting Manager Node\n");
 print color('bold blue');
-        print("Starting: Manager ");
-        $pgroup+=1;
-        my $pid=fork(); # TODO: Yea, We fork the current process and create a new one. But we do not assign 'new' file handlers
-	    die "Cannot fork: $!" if (! defined $pid);
-        if (! $pid) {
-            setpgrp(0, $pgroup);
-		# Only the child does this\
-            eval{
-                #TODO: Explain What is going onhere
-                exec("python3 $cur_dir/module/manager.py $system_name  >> /dev/$std_tty 2>> /dev/$std_err_tty &");
-                exit(); # < Technically not possible to reach
-                # NO EXECUTION BELOW THIS POINT!
-            };
-       
-		# Only The Parent Does This.
-	    } else {
-            #print("$pid");
-            # TODO: Communicate with The Node and get a heartbeat back. If unable, Fail
-            # We assume we always pass
-            ping_node($manager_config->{heartbeat_port}, "$system_name.manager");
-        }
-#TODO: Communicate Directly With Node to get Status. Then Move onto next node
+print("Starting: Manager ");
+
+my $pid=fork(); 
+die "Cannot fork: $!" if (! defined $pid);
+if (! $pid) {
+    # Only the child does this
+    setpgrp;
+    eval{
+        exec("python3 $cur_dir/module/manager.py $system_name  >> /dev/$std_tty 2>> /dev/$std_err_tty &");
+        exit(); # < Technically not possible to reach
+        # NO EXECUTION BELOW THIS POINT!
+    };
+} else {
+    # Only The Parent Does This.
+    ping_node($manager_config->{heartbeat_port}, "$system_name.manager");
+}
+
 print color('green');
-print ("All Managers have Started\n");
+#print ("All Managers have Started\n");
+print("\n");
 print color('bold yellow');
 print("Starting Ticker Nodes\n");
+
 foreach (keys %$ticker_config) {
     my $ticker_name = $_;
     print color('bold blue');
     print("Starting: Ticker ($ticker_name) ");
-        $pgroup+=1;
-        my $pid=fork(); # TODO: Yea, We fork the current process and create a new one. But we do not assign 'new' file handlers
-	    die "Cannot fork: $!" if (! defined $pid);
-        if (! $pid) {
-            setpgrp;
-		# Only the child does this
-            eval{
-                #TODO: Explain What is going onhere
-                exec("python3 $cur_dir/module/ticker.py $system_name $ticker_name  >> /dev/$std_tty 2>> /dev/$std_err_tty &");
-                exit(); # < Technically not possible to reach
-                # NO EXECUTION BELOW THIS POINT!
-            };
-       
-		# Only The Parent Does This.
-	    } else {
-            #print("$pid");
-            # TODO: Communicate with The Node and get a heartbeat back. If unable, Fail
-            # We assume we always pass
-            ping_node($ticker_config->{$_}->{heartbeat_port}, "$system_name.$_");
-        }
+    my $pid=fork(); # TODO: Yea, We fork the current process and create a new one. But we do not assign 'new' file handlers
+    die "Cannot fork: $!" if (! defined $pid);
+    if (! $pid) {
+        # Only the child does this
+        setpgrp;
+        eval{
+            exec("python3 $cur_dir/module/ticker.py $system_name $ticker_name  >> /dev/$std_tty 2>> /dev/$std_err_tty &");
+            exit(); # < Technically not possible to reach
+            # NO EXECUTION BELOW THIS POINT!
+        };
+    } else {
+        # Only The Parent Does This.
+        ping_node($ticker_config->{$_}->{heartbeat_port}, "$system_name.$_");
+    }
 }
 
 print color('green');
-print ("All Tickers have Started\n");
+#print ("All Tickers have Started\n");
+print("\n");
 print color('bold yellow');
 print("Starting Algorithm Nodes\n");
-#print(Dumper($algorithm_config));
+
 foreach (keys %$algorithm_config) {
     my $ticker_name = $_;    
     foreach (keys %{$algorithm_config->{$ticker_name}}) {
-        #print ($cur_dir."/module/system/$market_name/market.py \n");
         print color('bold blue');
         print("Starting: Algorithm $ticker_name ($_) ");
-        $pgroup+=1;
+
         my $pid=fork(); # TODO: Yea, We fork the current process and create a new one. But we do not assign 'new' file handlers
 	    die "Cannot fork: $!" if (! defined $pid);
         if (! $pid) {
+		    # Only the child does this
             setpgrp;
-		# Only the child does this\
             eval{
                 #TODO: Explain What is going onhere
                 exec("python3 $cur_dir/algorithm/$_.py $system_name $ticker_name $_ >> /dev/$std_tty 2>> /dev/$std_err_tty &");
                 exit(); # < Technically not possible to reach
                 # NO EXECUTION BELOW THIS POINT!
             };
-       
-		# Only The Parent Does This.
 	    } else {
-            #print("$pid");
-            # TODO: Communicate with The Node and get a heartbeat back. If unable, Fail
-            # We assume we always pass
+            # Only The Parent Does This.
             ping_node($algorithm_config->{$ticker_name}->{$_}->{heartbeat_port}, "$system_name.$ticker_name.$_");
         }
     }
 }
+
 print color('green');
-print ("All Algorithms have Started\n");
+#print ("All Algorithms have Started\n");
+print("\n");
 print color('bold yellow');
 print("Starting Algorothm Proxy Nodes\n");
 
@@ -561,115 +462,108 @@ foreach (keys %$proxy_config) {
     my $ticker_name = $_;
     print color('bold blue');
     print("Starting: Proxy ($ticker_name) ");
-        $pgroup+=1;
         my $pid=fork(); # TODO: Yea, We fork the current process and create a new one. But we do not assign 'new' file handlers
 	    die "Cannot fork: $!" if (! defined $pid);
         if (! $pid) {
-            setpgrp;
-		# Only the child does this\
+            # Only the child does this
+            setpgrp;		
             eval{
                 #TODO: Explain What is going onhere
                 exec("python3 $cur_dir/module/util/proxy.py $system_name $ticker_name  >> /dev/$std_tty 2>> /dev/$std_err_tty &");
                 exit(); # < Technically not possible to reach
                 # NO EXECUTION BELOW THIS POINT!
             };
-       
-		# Only The Parent Does This.
 	    } else {
-            #print("$pid");
-            # TODO: Communicate with The Node and get a heartbeat back. If unable, Fail
-            # We assume we always pass
+            # Only The Parent Does This.
             #ping_node(); We do not ping proxies (yet)
         }
 }
+
 print color('green');
-print ("All Algorithm Proxies have Started\n");
+#print ("All Algorithm Proxies have Started\n");
+print("\n\n");
 print color('bold yellow');
 print("Starting Account Nodes\n");
-
 
 foreach (keys %$account_config) {
     my $ticker_name = $_;
     print color('bold blue');
     print("Starting: Account ($ticker_name) ");
-        $pgroup+=1;
         my $pid=fork(); # TODO: Yea, We fork the current process and create a new one. But we do not assign 'new' file handlers
 	    die "Cannot fork: $!" if (! defined $pid);
         if (! $pid) {
-		# Only the child does this\
-        setpgrp;
-            eval{
+		    # Only the child does this
+            setpgrp;
+            eval {
                 #TODO: Explain What is going onhere
                 exec("python3 $cur_dir/module/system/$system_name/account.py $system_name $ticker_name  >> /dev/$std_tty 2>> /dev/$std_err_tty &");
                 exit(); # < Technically not possible to reach
                 # NO EXECUTION BELOW THIS POINT!
             };
        
-		# Only The Parent Does This.
+		
 	    } else {
-            #print("$pid");
-            # TODO: Communicate with The Node and get a heartbeat back. If unable, Fail
-            # We assume we always pass
-            #print(Dumper($account_config));
+            # Only The Parent Does This.
             ping_node($account_config->{$ticker_name}->{heartbeat_port}, "$system_name.$ticker_name.account");
         }
 }
+
 print color('green');
-print ("All Accounts have Started\n");
+#print ("All Accounts have Started\n");
+print("\n");
 print color('bold yellow');
 print("Starting Broker\n");
+print color('bold blue');
+
+print("Starting: Broker ($system_name)\n");
 $pid=fork(); # TODO: Yea, We fork the current process and create a new one. But we do not assign 'new' file handlers
 die "Cannot fork: $!" if (! defined $pid);
-print("Starting: Broker ($system_name) ");
-$pgroup+=1;
 if (! $pid) {
-# Only the child does this\
+    # Only the child does this
     setpgrp;
-    eval{
-        #TODO: Explain What is going onhere
+    eval {    
         exec("python3 $cur_dir/module/broker.py $system_name   >> /dev/$std_tty 2>> /dev/$std_err_tty &");
         exit(); # < Technically not possible to reach
         # NO EXECUTION BELOW THIS POINT!
     };
 
-# Only The Parent Does This.
 } else {
-    #print("$pid");
-    # TODO: Communicate with The Node and get a heartbeat back. If unable, Fail
-    # We assume we always pass
+    # Only The Parent Does This.
     #ping_node(); No Ping Broker (Just Yet)
 }
+
+print color('green');
+#print ("All Broker's have Started\n");
+print("\n");
+print color('bold yellow');
 print("Starting Trader\n");
-$pid=fork(); # TODO: Yea, We fork the current process and create a new one. But we do not assign 'new' file handlers
-die "Cannot fork: $!" if (! defined $pid);
+print color('bold blue');
 print("Starting: Trader ($system_name) ");
-$pgroup+=1;
+print color('bold green');
+
+
+$pid=fork();
+die "Cannot fork: $!" if (! defined $pid);
+print color('bold blue');
+
 if (! $pid) {
+    # Only the child does this 
     setpgrp;
-# Only the child does this\
     eval{
-        #TODO: Explain What is going onhere
+           
         exec("python3 $cur_dir/module/system/$system_name/trader.py $system_name   >> /dev/$std_tty 2>> /dev/$std_err_tty &");
         exit(); # < Technically not possible to reach
         # NO EXECUTION BELOW THIS POINT!
     };
 
-# Only The Parent Does This.
 } else {
-    #print("$pid");
-    # TODO: Communicate with The Node and get a heartbeat back. If unable, Fail
-    # We assume we always pass
+    # Only The Parent Does This.
+    print color('bold ');
     ping_node($trader_config->{heartbeat_port}, "$system_name.trader");
 }
+
 print color('green');
-print ("All Brokers And Traders have Started\n");
-print color('green');
-print ("F_Trader ($system_name) is Online\n");
-
-
-# OK OK OK OK OK.
-
-# So, The reality is... Well, this is not a great way to do this. Each 'node' should have a seperate 'terminal' ouput
-# The solution to this is to use TMUX and create a tmux config to launch all of these instances.
-# This is complicatd, but possible. I would encourage someone to pester me a lot for this to become a reality.
-# And I mean a lot.
+#print ("All Brokers And Traders have Started\n");
+print("\n");
+print color('bold magenta');
+print ("F_Trader ($system_name) has Started in State: Waiting for Executive\n");
