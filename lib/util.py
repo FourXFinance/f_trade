@@ -1,9 +1,10 @@
-
+# A Generic market agnostic trade object
 class Trade():
     market = None
     def __init__(self) -> None:
         pass
-
+    
+# Colors for Printing to terminal
 class bcolors:
     HEADER = '\033[95m'
     OKBLUE = '\033[94m'

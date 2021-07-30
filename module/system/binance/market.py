@@ -12,6 +12,7 @@ import json
 from datetime import datetime
 import time
 from binance import Client, ThreadedWebsocketManager, AsyncClient
+from zmq.eventloop import ioloop, zmqstream
 import asyncio
 # This is a tick Node. You will run one of these for every time interval
 
@@ -22,24 +23,24 @@ class MarketWorker(BinanceNode):
         self.system_name = system_name
         self.interval = interval
         self.tickers_with_topic = {}
-        super().__init__(system_name, self.name)
-        self.setup()
-        self.load_secrets()
-        
-        
+        super().__init__(system_name, self.name, create_connection=False) # We create an ASYNC Conneciton. NOT SYNC
+        self.setup()              
 
     def setup(self):
         self.load_config()
         self.setup_downstream()
+        self.setup_heartbeat(self.heartbeat_port)
 
-    
     def load_config(self):
         try:
             with open("config/generated/" + self.system_name + "/market/" + self.market_name + ".json") as config:
                 raw_credentials = json.load(config)
-                print(raw_credentials)
+                #print(raw_credentials)
                 sources = raw_credentials["sources"]
                 self.port = sources[self.interval]
+                heartbeat_sources = raw_credentials["heartbeat_port"]
+                self.heartbeat_port = heartbeat_sources[self.interval]
+
                 self.mappings = raw_credentials['tracked_tickers']
         except FileNotFoundError:
             print("config/generated/" + self.system_name + "/market/" + self.market_name + ".json")
@@ -49,7 +50,7 @@ class MarketWorker(BinanceNode):
         for mapping in self.mappings:
             self.tickers_with_topic.update(mapping)
         self.tickers = list(self.tickers_with_topic.keys())
-        print(self.tickers)
+        #print(self.tickers)
         self.downstream_controller.add_stream( 
                             self.interval,
                             self.port,
@@ -70,7 +71,7 @@ class MarketWorker(BinanceNode):
             print(e)
         recent_trades =  np.array(raw_data)
         df = pd.DataFrame(data=recent_trades)
-        #print(df.to_json())
+        print(df.to_json())
         #print(ticker_name + "\t" + str(self.tickers_with_topic[ticker_name]))
         self.send_to(self.interval, df.to_json(), topic=self.tickers_with_topic[ticker_name])
     
@@ -83,11 +84,12 @@ class MarketWorker(BinanceNode):
             print(e)
         recent_trades = np.array(raw_data)
         df = pd.DataFrame(data=recent_trades)
-        #print(df.to_json())
+        print(df.to_json())
         #print(ticker_name + "\t" + str(self.tickers_with_topic[ticker_name]))
+        now = datetime.now().time()
+        print(self.name, " : ", now)
         self.send_to(self.interval, df.to_json(), topic=self.tickers_with_topic[ticker_name])
-        self.send_to(self.interval, df.to_json(), topic=self.tickers_with_topic[ticker_name])
-        
+
     async def get_data_for_ticker(self, ticker):
         
         if self.interval == 'RT':

@@ -6,6 +6,7 @@ import json
 import time
 import pandas as pd
 from ast import literal_eval
+from zmq.eventloop import ioloop, zmqstream
 from enums import AcceptableKlineValues, Sleep
 import os
 from datetime import datetime
@@ -15,18 +16,20 @@ class Ticker(Node):
         self.ticker_name = ticker_name
         super().__init__(system_name, self.name)
         self.algorithm_config = {}
-    
         self.setup()
+
     def setup(self):
         self.load_config()
         self.setup_upstream()
         self.setup_downstream()
+        self.setup_heartbeat()
+        self.build_mappings()
 
     def load_config(self):
         try:
             with open("config/generated/" + self.system_name + "/ticker/" + self.ticker_name + ".json") as config:
                 raw_credentials = json.load(config)
-                print(raw_credentials)
+                #print(raw_credentials)
                 self.config = raw_credentials
         except FileNotFoundError:
             print("config/generated/" + self.system_name + "/market/" + self.market_name + ".json")
@@ -50,6 +53,9 @@ class Ticker(Node):
                             bind=False,
                             register=True
                         )
+            socket = self.upstream_controller.get_stream_raw(interval)
+            stream_sub = zmqstream.ZMQStream(socket)
+            stream_sub.on_recv_stream(self.iterate)
 
     def setup_downstream(self):
         self.downstream_controller.add_stream( 
@@ -68,25 +74,21 @@ class Ticker(Node):
         pass
     def clean_algorithm(self):
         pass
+
+    def iterate(self, stream, msg):
+        now = datetime.now().time()
+        # print(self.upstream_socket_map)
+        # print(self.downstream_name_map)
+        # Now we have the name of our stream!
+        raw_data = msg[0].decode("utf-8")  # For Reaons beyond me, this is an array of data.
+        data = {'topic': raw_data[:1], 'message': raw_data[1:]}
+        message = pd.read_json(data["message"])
+        print(message)
+        #TODO: Tickers have an N:1 input:ouput mapping. Let's change this to a N:N (Output has N streams on the same port, different topics though)
+        self.downstream_controller.send_to("DATA", message.to_json())
+
     def run(self):
-        upstreams = self.upstream_controller.get_streams()
-        upstream_socket_map = {}
-        for stream in upstreams.keys():
-            #print(all_streams[stream])
-            #print(all_streams[stream].name)
-            upstream_socket_map[upstreams[stream].get_socket()] = upstreams[stream].name
-        while True:
-            for stream in self.upstream_controller.recv_snapshot():
-                now = datetime.now().time()
-                print(self.name, " : ", now)
-                #We have a dictionary of streams. Which one do we have
-                input_stream = upstream_socket_map[stream]
-                raw_data = stream.recv().decode('UTF-8')
-                data = {'topic': raw_data[:1], 'message':raw_data[1:]}
-                message = pd.read_json(data["message"])
-                #print(message)
-                self.downstream_controller.send_to("DATA", message.to_json())
-            #time.sleep(1)
+        ioloop.IOLoop.instance().start()
 
 if __name__ == "__main__":
     T = Ticker(str(argv[1]), str(argv[2]))

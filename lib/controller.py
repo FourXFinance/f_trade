@@ -8,6 +8,9 @@ import zmq
 
 # A Stream is a ZMQ socket
 class Stream:
+    """
+    Streams are 'named' versions of zmq_stream objects.
+    """
     def __init__(self, name, port, type, topic="0", bind=False) -> None:
         self.context = zmq.Context()
         self.name = name
@@ -35,6 +38,9 @@ class Stream:
         self.socket.send_string("%s %s" % (topic, message))
 
 class Controller:
+    """
+    Controllers are collecitons of Streams with some additional functionality built on top
+    """
     def __init__(self) -> None:
         self.streams = {}
         self.poller = zmq.Poller()
@@ -56,6 +62,8 @@ class Controller:
     def get_streams(self):
         return self.streams
     
+    def get_streams_list(self):
+        return self.streams.keys()
     # Communication Methods
     # Designed to be invarient of underlying stream type
 

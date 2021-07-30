@@ -24,12 +24,12 @@ my $cur_dir = getcwd;
 
 my @shutdown_libs = ('module', 'algorithm');
 for my $lib (@shutdown_libs) {
-    my @found_modules = split ('\n',  `pgrep -laf "python3 $cur_dir/$lib/*"`);
-    foreach(@found_modules) {
-        print("DEBUG: ".$_."\n") if $enable_debug;
-        my @split_module = split(" ", $_);
-        next unless $split_module[1] eq "python3";
-        my $module_pid = $split_module[0];
-        my $res = `kill -15 $module_pid`;
-    }
+	my @found_modules = split ('\n',  `pgrep -laf "python3 $cur_dir/$lib/*"`);
+	foreach(@found_modules) {
+		print("DEBUG: ".$_."\n") if $enable_debug;
+		my @split_module = split(" ", $_);
+		next unless $split_module[1] eq "python3";
+		my $module_pid = $split_module[0];
+		my $res = `kill -15 $module_pid`;
+	}
 }

@@ -21,7 +21,7 @@ class BrokerProxy(Node):
         try:
             with open("config/generated/" + self.system_name + "/broker/" + self.system_name + ".json") as config:
                 raw_credentials = json.load(config)
-                print(raw_credentials)
+                #print(raw_credentials)
                 self.config = raw_credentials
         except FileNotFoundError:
             print("config/generated/" + self.system_name + "/broker/" + self.system_name + ".json")

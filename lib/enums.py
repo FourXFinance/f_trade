@@ -29,7 +29,7 @@ class AcceptableKlineValues(Enum):
     KLINE_INTERVAL_1MONTH = '1M'
 
 class Sleep(Enum):
-    SLEEP_RT =  5 # RT Time will determine bandwidth use!
+    SLEEP_RT =  5 # RT Time will dominate bandwidth use!
     SLEEP_1M =  (1 * minute) - 1
     SLEEP_3M =  (3 * minute) - 1
     SLEEP_5M =  (5 * minute) - 1
@@ -43,4 +43,18 @@ class Sleep(Enum):
     SLEEP_12H =  (720 * minute) - 1
     SLEEP_1D =  (1440 * minute) - 1
 
+class NodeModes(Enum):
+    START_UP_AWAITING_PING = 0b1
+    START_UP_AWAITING_EXEC = 0b1 << 1
+    OK = 0b1 << 2
+    ERROR = 0b1 << 3
+
+class SystemModes(Enum):
+    TEST_STARTING_UP = 0b1
+    STARTING_UP = 0b1 << 1
+    OK = 0b1 << 2
+    ERROR = 0b1 << 3
+    
+
+    
 

@@ -15,6 +15,7 @@ system:
   account_offset: 51
   broker_proxy_port: 6000
   trader_proxy_port: 7000
+  heartbeat_base_port: 15118 # Heartbeat 'server'
   trader_enabled: False
   logger_port: 10000
   logger_proxy_port: 9000
@@ -32,13 +33,13 @@ tickers:
 - name: "DOGEEUR"
   enabled: True
   algorithms:
-  - name: scalp
+  - name: always_buy
     enabled: True
     config:
       window: 10
       target_growth: 1.04
   - name: scalp_low
-    enabled: True
+    enabled: False
     config:
       window: 10
       target_growth: 1.04
@@ -48,7 +49,7 @@ tickers:
   - name: always_buy
     enabled: True
   - name: scalp
-    enabled: True
+    enabled: False
     config:
       window: 5
       target_growth: 1.03

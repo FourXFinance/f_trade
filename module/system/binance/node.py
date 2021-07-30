@@ -9,10 +9,11 @@ from binance import Client, ThreadedWebsocketManager, AsyncClient
 
 class BinanceNode(Node):
     market_name = "Binance"
-    def __init__(self, system_name,name) -> None:
+    def __init__(self, system_name,name, create_connection=True) -> None:
         super().__init__(system_name, name)
         self.load_secrets()
-        self.create_market_connection()
+        if create_connection == True:
+            self.create_market_connection()
 
     def load_secrets(self):
         try:
@@ -25,7 +26,6 @@ class BinanceNode(Node):
             raise FileNotFoundError
         #print("API KEY:" + self.API_KEY)
         #print("SECRET KEY:" + self.SECRET_KEY)
-
     def create_market_connection(self, test_mode = False):
         self.client  = Client(self.API_KEY, self.SECRET_KEY, testnet=test_mode)
 

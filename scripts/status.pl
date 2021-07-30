@@ -18,7 +18,6 @@ use vars qw($opt_n $opt_a);
 getopts("n:a:");
 
 
-
 my $enable_debug = 0;
 my $target_node = defined $opt_n ? $opt_n : undef;
 my @libs;
@@ -40,8 +39,8 @@ print(color('bold blue'));
 my @found_modules = split ('\n',  `pgrep -laf "python3 $cur_dir/*"`);
 print("The Following F Trader System Nodes exist:\n") if @found_modules > 1;
 unless (@found_modules > 1) {
-    print("No F Trader System Nodes are Running\n");
-    exit();
+	print("No F Trader System Nodes are Running\n");
+	exit();
 }
 push @market_modules , grep(/\/market.py/, @found_modules);
 push @manager_modules , grep(/\/manager.py/, @found_modules);
@@ -57,50 +56,50 @@ print("\n")  if @market_modules;
 print(color('bold blue'));
 print("Market Nodes Running:\n") if @market_modules;
 print(color('bold white'));
-foreach(@market_modules) {        
-    my @split_module = split(" ", $_);
-    next unless $split_module[1] eq "python3";
-    print("".$_."\n");
+foreach(@market_modules) {
+	my @split_module = split(" ", $_);
+	next unless $split_module[1] eq "python3";
+	print("".$_."\n");
 }
 
 print("\n") if @manager_modules;
 print(color('bold blue'));
 print("Manager Nodes Running:\n") if @manager_modules;
 print(color('bold white'));
-foreach(@manager_modules) {        
-    my @split_module = split(" ", $_);
-    next unless $split_module[1] eq "python3";
-    print("".$_."\n");
+foreach(@manager_modules) {
+	my @split_module = split(" ", $_);
+	next unless $split_module[1] eq "python3";
+	print("".$_."\n");
 }
 
-print("\n") if @ticker_modules; 
+print("\n") if @ticker_modules;
 print(color('bold blue'));
 print("Ticker Nodes Running:\n") if @ticker_modules;
 print(color('bold white'));
-foreach(@ticker_modules) {        
-    my @split_module = split(" ", $_);
-    next unless $split_module[1] eq "python3";
-    print("".$_."\n");
+foreach(@ticker_modules) {
+	my @split_module = split(" ", $_);
+	next unless $split_module[1] eq "python3";
+	print("".$_."\n");
 }
 
 print("\n") if @algorithm_modules;
 print(color('bold blue'));
 print("Algorithm Nodes Running:\n") if @algorithm_modules;
 print(color('bold white'));
-foreach(@algorithm_modules) {        
-    my @split_module = split(" ", $_);
-    next unless $split_module[1] eq "python3";
-    print("".$_."\n");
+foreach(@algorithm_modules) {
+	my @split_module = split(" ", $_);
+	next unless $split_module[1] eq "python3";
+	print("".$_."\n");
 }
 
 print("\n") if @proxy_modules;
 print(color('bold blue'));
 print("Proxy Nodes Running:\n") if @proxy_modules;
 print(color('bold white'));
-foreach(@proxy_modules) {        
-    my @split_module = split(" ", $_);
-    next unless $split_module[1] eq "python3";
-    print("".$_."\n");
+foreach(@proxy_modules) {
+	my @split_module = split(" ", $_);
+	next unless $split_module[1] eq "python3";
+	print("".$_."\n");
 }
 
 
@@ -108,10 +107,10 @@ print("\n") if @account_modules;
 print(color('bold blue'));
 print("Account Nodes Running:\n")  if @account_modules;
 print(color('bold white'));
-foreach(@account_modules) {        
-    my @split_module = split(" ", $_);
-    next unless $split_module[1] eq "python3";
-    print("".$_."\n");
+foreach(@account_modules) {
+	my @split_module = split(" ", $_);
+	next unless $split_module[1] eq "python3";
+	print("".$_."\n");
 }
 
 
@@ -119,18 +118,18 @@ print("\n") if @broker_modules;
 print(color('bold blue'));
 print("Broker Nodes Running:\n") if @broker_modules;
 print(color('bold white'));
-foreach(@broker_modules) {        
-    my @split_module = split(" ", $_);
-    next unless $split_module[1] eq "python3";
-    print("".$_."\n");
+foreach(@broker_modules) {
+	my @split_module = split(" ", $_);
+	next unless $split_module[1] eq "python3";
+	print("".$_."\n");
 }
 
 print("\n") if @trader_modules;
 print(color('bold blue'));
 print("Trader Nodes Running:\n") if @trader_modules;
 print(color('bold white'));
-foreach(@trader_modules) {        
-    my @split_module = split(" ", $_);
-    next unless $split_module[1] eq "python3";
-    print("".$_."\n");
+foreach(@trader_modules) {
+	my @split_module = split(" ", $_);
+	next unless $split_module[1] eq "python3";
+	print("".$_."\n");
 }
