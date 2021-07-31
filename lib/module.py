@@ -18,7 +18,7 @@ class Node:
         
         self.mode = 0  # TODO: System Modes
         self.name = name  # TODO: System Name should be more specilized
-
+        self.test_mode = test_mode
         self.system_name = system_name
         self.context = zmq.Context()
         self.logging_enabled = False
@@ -190,9 +190,9 @@ class Node:
 
 
 class Algorithm(Node):
-    def __init__(self, system_name, ticker):
+    def __init__(self, system_name, ticker, test_mode=False):
         self.ticker = ticker
-        super().__init__(system_name, self.name)
+        super().__init__(system_name, self.name, test_mode)
         self.setup()
         # TODO:Algorithms should have HWM set to 1!
 
@@ -209,13 +209,14 @@ class Algorithm(Node):
         self.setup_heartbeat()
 
     def configure(self):
-        self.upstream_controller.add_stream("DATA",
-                                            self.config["algorithm_port"],
-                                            zmq.SUB)
-        #TODO: We have 1 input Stream for N data sources. Let's change this to a 1:! mapping                                            
-        socket = self.upstream_controller.get_stream_raw("DATA")
-        stream_sub = zmqstream.ZMQStream(socket)
-        stream_sub.on_recv_stream(self.iterate)
+        for source in self.config["available_ticker_sources"]:
+            self.upstream_controller.add_stream("DATA." + str(source),
+                                                self.config["algorithm_port"],
+                                                zmq.SUB,
+                                                topic=str(source))
+            socket = self.upstream_controller.get_stream_raw("DATA." + str(source))
+            stream_sub = zmqstream.ZMQStream(socket)
+            stream_sub.on_recv_stream(self.iterate)
 
         self.downstream_controller.add_stream("PROXY",
                                               self.config["proxy_port"],

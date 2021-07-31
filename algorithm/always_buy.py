@@ -17,13 +17,13 @@ import csv
 from zmq.eventloop import ioloop, zmqstream
 from datetime import datetime
 from util import bcolors
+import argparse
 
 class AlwaysBuy(Algorithm):
     name = "always_buy"
-    def __init__(self, system_name, ticker) -> None:
-        super().__init__(system_name, ticker)
+    def __init__(self, system_name, ticker, test_mode=False) -> None:
+        super().__init__(system_name, ticker, test_mode)
         self.ticker_name = ticker
-        self.test_mode = False
         pass
     def setup_defaults(self):
         pass
@@ -66,43 +66,23 @@ class AlwaysBuy(Algorithm):
         self.downstream_controller.send_to("PROXY", json.dumps(message))
             
     def run(self):
+        if self.test_mode:
+            print("TEST_MODE")
+            while True:
+                test_data = "TEST"
+                print(test_data)
+                self.downstream_controller.send_to("PROXY", test_data)
+                time.sleep(1)
         ioloop.IOLoop.instance().start()
-        while True:
-            if not self.test_mode:
-                raw_data = self.recv_from("DATA").decode('UTF-8')
-                #print (raw_data)
-                #data = {'topic': raw_data[:1], 'message':raw_data[1:]}
-                #message = pd.read_json(data["message"])
-                #decision = self.check(message)            
-                #print(data["message"])##
-                #time.sleep(1) # Let's not be too hasty
-                message = {}
-                now = datetime.now().time()
-                #print(self.name, " : ", now)
-                message["weight"] = 0
-                message["ticker_name"] = self.ticker_name
-                message["trade_type"] = 0b1 << 3
-                message["ticker_price"] = 0.0000050 # This should come from the Ticker Module!
-                message["stop_price"] = 0.0000040 # This should come from the Ticker Module!
-                message["target_price"] = 0.55 # This should come from the Ticker Module!
-                #print(message)
-                self.downstream_controller.send_to("PROXY", json.dumps(message))
-            else:
-                message = {}
-                
-                message["weight"] = 0
-                message["ticker_name"] = self.ticker_name
-                message["trade_type"] = 0b1 << 3
-                message["ticker_price"] = 0.0000050 # This should come from the Ticker Module!
-                message["stop_price"] = 0.0000040 # This should come from the Ticker Module!
-                message["target_price"] = 0.55 # This should come from the Ticker Module!
-                #print(message)
-                self.downstream_controller.send_to("PROXY", json.dumps(message))
-                #time.sleep(1)
-            
+         
 
 
 
 if __name__ == "__main__":
-    AB =  AlwaysBuy(str(argv[1]),str(argv[2]))
+    parser = argparse.ArgumentParser()
+    parser.add_argument("market")
+    parser.add_argument("ticker")
+    parser.add_argument("--test", help="Runs the module in test mode", action="store_true")
+    args = parser.parse_args()
+    AB = AlwaysBuy(str(args.market), str(args.ticker), test_mode=args.test)
     AB.run()

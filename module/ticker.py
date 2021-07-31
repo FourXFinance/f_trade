@@ -15,7 +15,7 @@ class Ticker(Node):
     def __init__(self,system_name, ticker_name, test_mode = False) -> None:
         self.name = "Ticker"
         self.ticker_name = ticker_name
-        super().__init__(system_name, self.name,test_mode)
+        super().__init__(system_name, self.name, test_mode)
         self.algorithm_config = {}
         self.setup()
 
@@ -89,15 +89,21 @@ class Ticker(Node):
         self.downstream_controller.send_to("DATA" + interval, message.to_json())
 
     def run(self):
+        if self.test_mode:
+            while True:
+                for stream_name in self.downstream_controller.get_streams_list():
+                    stream = self.downstream_controller.get_stream(stream_name)
+                    self.downstream_controller.get_stream(stream_name).send("TEST_MSG", stream.topic)
+                    time.sleep(1)
         ioloop.IOLoop.instance().start()
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("market")
     parser.add_argument("ticker")
-    parser.add_argument("--test", help="Runs the module in test mode")
+    parser.add_argument("--test", help="Runs the module in test mode", action="store_true")
     args = parser.parse_args()
-    T = Ticker(str(args.market), str(args.ticker), args.test)
+    T = Ticker(str(args.market), str(args.ticker), test_mode=args.test)
     T.run()
 
 

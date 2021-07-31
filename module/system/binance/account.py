@@ -15,6 +15,7 @@ import pandas as pd
 import math
 from zmq.eventloop import ioloop, zmqstream
 from binance.enums import *
+import argparse
 
 class Account(BinanceNode):
     ticker_config = {}
@@ -39,7 +40,8 @@ class Account(BinanceNode):
     def iterate(self, stream,  msg):
         raw_data = msg[0].decode('utf-8')  # For Reaons beyond me, this is an array of data.
         data = {'topic': raw_data[:1], 'message': raw_data[1:]}
-        print(data['message'])
+        print(data)
+        return
         algorithm_result = dict(data['message'])
         if algorithm_result["trade_type"] == 0b1 << 3:
             now = datetime.now().time()
@@ -138,6 +140,10 @@ class Account(BinanceNode):
 
             
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument("market")
+    parser.add_argument("ticker")
+    parser.add_argument("--test", help="Runs the module in test mode", action="store_true")
     A = Account(sys.argv[1], sys.argv[2])
     A.run()
     
