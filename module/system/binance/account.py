@@ -15,6 +15,7 @@ import pandas as pd
 import math
 from zmq.eventloop import ioloop, zmqstream
 from binance.enums import *
+import argparse
 
 class Account(BinanceNode):
     ticker_config = {}
@@ -22,11 +23,11 @@ class Account(BinanceNode):
     max_open_trades = 10
     precision = 0
     lot_price_size = 25 # IN USDT
-    def __init__(self,system_name, ticker_name,) -> None:
+    def __init__(self,system_name, ticker_name,test_mode=False) -> None:
         self.name = "Account"
         self.ticker_name = ticker_name
         self.lot_size = 25 #Euros
-        super().__init__(system_name, self.name)
+        super().__init__(system_name, self.name,test_mode)
         self.setup()
 
     def setup(self):
@@ -39,7 +40,8 @@ class Account(BinanceNode):
     def iterate(self, stream,  msg):
         raw_data = msg[0].decode('utf-8')  # For Reaons beyond me, this is an array of data.
         data = {'topic': raw_data[:1], 'message': raw_data[1:]}
-        print(data['message'])
+        print(data)
+        return
         algorithm_result = dict(data['message'])
         if algorithm_result["trade_type"] == 0b1 << 3:
             now = datetime.now().time()
@@ -134,11 +136,23 @@ class Account(BinanceNode):
 
 
     def run(self):
+        if self.test_mode:
+            print("TEST_MODE")
+            while True:
+                test_data = "TEST"
+                print(test_data)
+                self.downstream_controller.send_to("PROXY", test_data)
+                time.sleep(1)
         ioloop.IOLoop.instance().start()
 
             
 if __name__ == "__main__":
-    A = Account(sys.argv[1], sys.argv[2])
+    parser = argparse.ArgumentParser()
+    parser.add_argument("market")
+    parser.add_argument("ticker")
+    parser.add_argument("--test", help="Runs the module in test mode", action="store_true")
+    args = parser.parse_args()
+    A = Account(str(args.market), str(args.ticker), test_mode=args.test)
     A.run()
     
 

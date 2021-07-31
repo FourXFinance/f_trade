@@ -47,11 +47,15 @@ class BinanceTrader(BinanceNode):
                             bind=False,
                             register=False
                         )
+        socket = self.upstream_controller.get_stream_raw("DATA")
+        stream_sub = zmqstream.ZMQStream(socket)
+        stream_sub.on_recv_stream(self.iterate)
 
     def submit_order(self):
         pass
 
     def iterate(self, stream, msg):
+        print(msg)
         pass
     def run(self):
         ioloop.IOLoop.instance().start()

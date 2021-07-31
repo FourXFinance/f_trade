@@ -10,14 +10,14 @@ use Term::ANSIColor;
 use Cwd;
 use Storable 'dclone';
 use Getopt::Std;
-use vars qw($opt_t $opt_s);
-getopts("ts:");
+use vars qw($opt_t $opt_s $opt_d);
+getopts("ts:d");
 
 my $std_tty = 'null';
 my $std_err_tty = 'null';
 my $cur_dir = getcwd;
 my $system_name = undef;
-
+my $dry_run = defined $opt_d;
 # Format Strings
 my $f = "%-40s%30s\n";
 
@@ -216,7 +216,7 @@ for my $ticker (@$tickers) {
 
 	#TODO: Handle Different Markets with Different Tickers
 	$current_heartbeat_port+=1;
-	push @{$market_config->{'binance'}->{tracked_tickers}}, {$ticker_name => $topic};
+	push @{$market_config->{$system_name}->{tracked_tickers}}, {$ticker_name => $topic};
 	$topic+=1;
 	for my $algorithm (@$ticker_algorithms){
 		my $algorithm_enabled = $algorithm->{enabled};
@@ -226,13 +226,17 @@ for my $ticker (@$tickers) {
 		if (defined $algorithm_config->{$ticker_name} and defined $algorithm_config->{$ticker_name}->{$algorithm_name}) {
 			printf("$f", "Error:" , "Algorithm $algorithm_name already defined for $ticker_name") and die ("Startup Error");
 		}
+
+		my @available_tick_sources = keys %{$ticker_config->{$ticker_name}->{required_sources}->{$system_name}};
 		$algorithm_config->{$ticker_name}->{$algorithm_name} = {
 			algorithm_port => $current_algorithm_port, #TODO: Figure out what to do with this?
 			algorithm_name => $algorithm_name,
 			configuration_options => $config,
 			proxy_port => $current_algorithm_proxy_port,
 			heartbeat_port => $current_heartbeat_port,
+			available_ticker_sources => \@available_tick_sources,
 		};
+
 		$current_heartbeat_port+=1;
 
 		# $current_algorithm_port+=1;
@@ -254,9 +258,8 @@ for my $ticker (@$tickers) {
 	$current_algorithm_port += $base_ticker_offset;
 	$ticker_count +=1;
 }
-
+#print(Dumper($algorithm_config));
 # A this tage the system is 'valid'. We now conver these hash maps into json config files for our nodes to load
-
 # Delete Old Configs
 # TODO: Put in a flag for no-delete
 qx\rm -rf ./config/generated\;
@@ -354,6 +357,9 @@ qx\touch ./config/generated/$system_name/trader/$system_name.json\;
 open(FH, '>', "./config/generated/$system_name/trader/$system_name.json") or die $!;
 print FH $json;
 close(FH);
+
+exit 0 if $dry_run;
+
 
 # At this stage, all the configuration files (.json) have been created and written to disk. Start each node and ping them
 print color('bold yellow');

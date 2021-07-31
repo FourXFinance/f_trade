@@ -15,7 +15,7 @@ class Stream:
         self.context = zmq.Context()
         self.name = name
         self.port = int(port)
-        self.topic = int(topic)
+        self.topic = topic
         self.type = type
         self.bind = bind
         self.socket = None

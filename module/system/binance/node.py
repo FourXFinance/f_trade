@@ -9,8 +9,8 @@ from binance import Client, ThreadedWebsocketManager, AsyncClient
 
 class BinanceNode(Node):
     market_name = "Binance"
-    def __init__(self, system_name,name, create_connection=True) -> None:
-        super().__init__(system_name, name)
+    def __init__(self, system_name,name, test_mode=False,create_connection=True) -> None:
+        super().__init__(system_name, name,test_mode)
         self.load_secrets()
         if create_connection == True:
             self.create_market_connection()

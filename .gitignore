@@ -11,3 +11,4 @@ config/secrets/*
 .f_trader
 .f_trader/*
 go.*
+.vstags
