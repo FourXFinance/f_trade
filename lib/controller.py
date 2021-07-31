@@ -36,7 +36,13 @@ class Stream:
 
     def send(self, message, topic="0"):
         self.socket.send_string("%s %s" % (topic, message))
-
+    def get_stream_info(self):
+        return {
+            "name" : self.name,
+            "port" : self.port,
+            "topic" : self.topic,
+            "bind" : self.bind,
+        }
 class Controller:
     """
     Controllers are collecitons of Streams with some additional functionality built on top
@@ -92,3 +98,7 @@ class Controller:
         #for stream in streams:
             #yield stream # Should check on the performance of this.
         return streams
+    def get_controller_info(self):
+        content = {}
+        for stream_name in self.streams.keys():
+            content[stream_name] = self.streams[stream_name].get_stream_info()

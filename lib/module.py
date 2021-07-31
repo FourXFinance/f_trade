@@ -85,10 +85,10 @@ class Node:
         else:
             # We should not be sending other messages on the heartbeat request.
             pass
-
-    def handle_executive(self, stream, msg):
+    
+    def handle_request(self, stream, msg):
         """
-        handle_executive. How do we action and respond to messages from the executive controller
+        handle_executive. How do we action and respond to messages
         """
         pass
 

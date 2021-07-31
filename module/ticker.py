@@ -87,14 +87,16 @@ class Ticker(Node):
         print(message)
         #TODO: Tickers have an N:1 input:ouput mapping. Let's change this to a N:N (Output has N streams on the same port, different topics though)
         self.downstream_controller.send_to("DATA" + interval, message.to_json())
-
-    def run(self):
-        if self.test_mode:
-            while True:
+        
+    def run_test_mode(self):
+        while True:
                 for stream_name in self.downstream_controller.get_streams_list():
                     stream = self.downstream_controller.get_stream(stream_name)
                     self.downstream_controller.get_stream(stream_name).send("TEST_MSG", stream.topic)
                     time.sleep(1)
+    def run(self):
+        if self.test_mode:
+            self.run_test_mode()
         ioloop.IOLoop.instance().start()
 
 if __name__ == "__main__":
