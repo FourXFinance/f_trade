@@ -7,13 +7,15 @@ import json
 import zmq
 from controller import Controller
 import sys
+import argparse
+
 sys.path.insert(1, 'lib')
-
-
+import argparse
 class Node:
     enabled = False
 
-    def __init__(self, system_name, name, id=None):
+    def __init__(self, system_name, name, test_mode = False):
+        
         self.mode = 0  # TODO: System Modes
         self.name = name  # TODO: System Name should be more specilized
 
