@@ -84,7 +84,6 @@ class Ticker(Node):
         now = datetime.now().time()
         # print(self.upstream_socket_map)
         # print(self.downstream_name_map)
-        #TODO: GET SOURCE FROM MAPPING
         stream_name = self.upstream_socket_map[stream.socket]
         #stream = self.downstream_controller.get_stream(stream_name)
         print(stream_name)

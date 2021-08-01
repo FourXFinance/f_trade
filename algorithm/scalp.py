@@ -94,8 +94,8 @@ class Scalp(Algorithm):
             next
         if self.count == self.window:
             #Make a Buy Request
-            print(bcolors.OKGREEN + "(" + "\u0024" + ") Buying " + self.ticker_name)
-            self.downstream_controller.send_to("PROXY", "BUY ME")
+            print(bcolors.OKGREEN + "(" + "\u0024" + ") Buying " + self.ticker_name)            
+            return True
         
     def iterate(self, stream, msg):
         stream_name = self.upstream_socket_map[stream.socket]   
@@ -107,7 +107,9 @@ class Scalp(Algorithm):
         print(stream_name)
         data = {'topic': raw_data[:2], 'message': raw_data[2:]}
         parsed_data = pd.read_json(data["message"])
-        # result = self.check(parsed_data)
+        result = self.check(parsed_data)
+        if result == True:
+            self.downstream_controller.send_to("PROXY", "BUY ME")!
         return;
         message = {}
         print(message)
