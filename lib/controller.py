@@ -1,5 +1,5 @@
 import sys
-from time import time
+import time
 sys.path.insert(1, 'lib')
 from constants import POLLER_TIMEOUT
 from os import name
@@ -11,7 +11,7 @@ class Stream:
     """
     Streams are 'named' versions of zmq_stream objects.
     """
-    def __init__(self, name, port, type, topic="0", bind=False) -> None:
+    def __init__(self, name, port, type, topic="0", bind=False, bind_on_send=False) -> None:
         self.context = zmq.Context()
         self.name = name
         self.port = int(port)
@@ -19,11 +19,16 @@ class Stream:
         self.type = type
         self.bind = bind
         self.socket = None
+        self.bind_on_send = bind_on_send
         self.setup_stream()
 
     def setup_stream(self):
+
         self.socket = self.context.socket(self.type)
-        self.socket.set_hwm(1)
+        
+        #self.socket.set_hwm(1)
+        if self.bind_on_send:
+            return
         if self.bind:
             self.socket.bind("tcp://*:%d" % self.port)
         else:
@@ -31,11 +36,17 @@ class Stream:
             if self.type == zmq.SUB:
                 self.socket.setsockopt_string(zmq.SUBSCRIBE, str(self.topic))
 
+
     def get_socket(self):
         return self.socket
 
     def send(self, message, topic="0"):
-        self.socket.send_string("%s %s" % (topic, message))
+        if self.bind_on_send:
+            self.socket.bind("tcp://*:%d" % self.port)
+            self.socket.send_string("%s %s" % (topic, message))
+            self.socket.unbind(self.socket.last_endpoint)
+        else:
+            self.socket.send_string("%s %s" % (topic, message))
     def get_stream_info(self):
         return {
             "name" : self.name,
@@ -52,10 +63,10 @@ class Controller:
         self.poller = zmq.Poller()
         self.PTIMEOUT = POLLER_TIMEOUT
     
-    def add_stream(self, name, port, type, topic="0", bind=False, register=False):
+    def add_stream(self, name, port, type, topic="0", bind=False, register=False, bind_on_send=False):
         if name in self.streams:
             raise Exception("Controller already has stream")
-        self.streams[name] = Stream(name, port, type, topic, bind)      
+        self.streams[name] = Stream(name, port, type, topic, bind, bind_on_send)      
         if register:
             self.poller.register(self.streams[name].get_socket(), zmq.POLLIN)
     

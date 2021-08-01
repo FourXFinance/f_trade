@@ -31,7 +31,7 @@ class BinanceTrader(BinanceNode):
         try:
             with open("config/generated/" + self.system_name + "/trader/" + self.system_name + ".json") as config:
                 raw_config = json.load(config)
-                #print(raw_config)
+                #print(raw_config)s
                 self.config = raw_config
         except FileNotFoundError:
             print("config/generated/" + self.system_name + "/trader/" + self.system_name + ".json")

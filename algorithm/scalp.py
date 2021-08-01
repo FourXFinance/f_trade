@@ -14,8 +14,11 @@ import json
 import signal
 import sys
 import csv
+from zmq.eventloop import ioloop, zmqstream
 from datetime import datetime
 from util import bcolors
+
+
 class Scalp(Algorithm):
     name = "scalp"
     def __init__(self, system_name, ticker) -> None:
@@ -30,16 +33,16 @@ class Scalp(Algorithm):
         self.window = None
 
     def setup_config(self):
-        self.target_percent = self.config_raw["configuration_options"]["target_growth"] or 1.03
-        self.window = int(self.config_raw["configuration_options"]["window"]) or 3
+        self.target_percent = self.config["configuration_options"]["target_growth"] or 1.03
+        self.window = int(self.config["configuration_options"]["window"]) or 3
         self.count = 0
         self.fail_count = 0
     def iterate(self):
         # To Be Used for Callbacks! - Coming Soon!!!
         pass
     def clean(self):
-        self.previous_count = self.config_raw["configuration_options"]["target_growth"] or 1.03
-        self.window = int(self.config_raw["configuration_options"]["window"]) or 3
+        self.previous_count = self.config["configuration_options"]["target_growth"] or 1.03
+        self.window = int(self.config["configuration_options"]["window"]) or 3
         self.count = 0
         self.fail_count = 0
     def check(self, data):
@@ -71,19 +74,19 @@ class Scalp(Algorithm):
         price = price/len(raw_data)
         lowest_id = raw_data[0][0]["id"]
         highest_id = raw_data[-1][0]["id"]
-        #print(bcolors.OKCYAN + "AVG Price\t" + str(price) + ": " , end="")
+        print(bcolors.OKCYAN + "AVG Price\t" + str(price) + ": " , end="")
         if self.previous_price == None:
-            #print(bcolors.WARNING + "\u0398")
+            print(bcolors.WARNING + "\u0398")
             self.previous_price = price
         elif self.previous_price < price:
-            #print(bcolors.OKGREEN + '\u2197')
+            print(bcolors.OKGREEN + '\u2197')
             self.previous_price = price
             self.count+=1
         elif self.previous_price == price:
-            #print(bcolors.OKCYAN + '\u21dd')
+            print(bcolors.OKCYAN + '\u21dd')
             pass
         else:
-            #print(bcolors.FAIL + '\u2198')
+            print(bcolors.FAIL + '\u2198')
             self.previous_price = None
             self.count = 0
             self.fail_count +=1
@@ -91,19 +94,27 @@ class Scalp(Algorithm):
             next
         if self.count == self.window:
             #Make a Buy Request
-            #print(bcolors.OKGREEN + "(" + "\u0024" + ") Buying " + self.ticker_name)
+            print(bcolors.OKGREEN + "(" + "\u0024" + ") Buying " + self.ticker_name)
             self.downstream_controller.send_to("PROXY", "BUY ME")
         
-
+    def iterate(self, stream, msg):
+        stream_name = self.upstream_socket_map[stream.socket]   
+        #print(stream_name)             
+        #print(stream)
+        # Now we have the name of our stream!
+        raw_data = msg[0].decode("utf-8")  # For Reaons beyond me, this is an array of data.
+        #print(raw_data)
+        print(stream_name)
+        data = {'topic': raw_data[:2], 'message': raw_data[2:]}
+        parsed_data = pd.read_json(data["message"])
+        # result = self.check(parsed_data)
+        return;
+        message = {}
+        print(message)
+        #TODO: Tickers have an N:1 input:ouput mapping. Let's change this to a N:N (Output has N streams on the same port, different topics though)
+        self.downstream_controller.send_to("PROXY", message.to_json(), topic=stream_name)
     def run(self):
-        while True:
-            raw_data = self.recv_from("DATA").decode('UTF-8')
-            #print (raw_data)
-            data = {'topic': raw_data[:1], 'message':raw_data[1:]}
-            message = pd.read_json(data["message"])
-            decision = self.check(message)            
-            #print(data["message"])##
-            time.sleep(1) # Let's not be too hasty
+        ioloop.IOLoop.instance().start()
             
 
 

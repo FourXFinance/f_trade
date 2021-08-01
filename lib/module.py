@@ -207,21 +207,24 @@ class Algorithm(Node):
         self.load_config()
         self.configure()
         self.setup_heartbeat()
+        self.build_mappings()
 
     def configure(self):
         for source in self.config["available_ticker_sources"]:
-            self.upstream_controller.add_stream("DATA." + str(source),
+            print(source)
+            self.upstream_controller.add_stream(str(source),
                                                 self.config["algorithm_port"],
                                                 zmq.SUB,
                                                 topic=str(source))
-            socket = self.upstream_controller.get_stream_raw("DATA." + str(source))
+            socket = self.upstream_controller.get_stream_raw(str(source))
             stream_sub = zmqstream.ZMQStream(socket)
             stream_sub.on_recv_stream(self.iterate)
-
         self.downstream_controller.add_stream("PROXY",
                                               self.config["proxy_port"],
                                               zmq.PUB)
 
+    def iterate(self, stream, msg):
+        pass
     def run():
         raise Exception("Override Me!")
 

@@ -69,6 +69,7 @@ class MarketWorker(BinanceNode):
             # print(raw_data)
         except Exception as e:
             print(e)
+            return
         recent_trades =  np.array(raw_data)
         df = pd.DataFrame(data=recent_trades)
         print(df.to_json())

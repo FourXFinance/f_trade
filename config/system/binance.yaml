@@ -35,21 +35,23 @@ tickers:
   algorithms:
   - name: always_buy
     enabled: True
+    required_sources: #TODO: We should check what data streams the algorithm needs. Only enable those for this module
+    - "RT"
     config:
       window: 10
       target_growth: 1.04
-  - name: scalp_low
-    enabled: False
+  - name: scalp
+    enabled: True
     config:
-      window: 10
+      window: 0
       target_growth: 1.04
 - name: "SHIBEUR"
   enabled: True
   algorithms:
   - name: always_buy
-    enabled: True
-  - name: scalp
     enabled: False
+  - name: scalp
+    enabled: True
     config:
       window: 5
       target_growth: 1.03
