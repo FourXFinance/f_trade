@@ -96,7 +96,8 @@ class Scalp(Algorithm):
             #Make a Buy Request
             print(bcolors.OKGREEN + "(" + "\u0024" + ") Buying " + self.ticker_name)            
             return True
-        
+    def send_trade_request(self, trade_data):
+        pass
     def iterate(self, stream, msg):
         stream_name = self.upstream_socket_map[stream.socket]   
         #print(stream_name)             
@@ -109,7 +110,7 @@ class Scalp(Algorithm):
         parsed_data = pd.read_json(data["message"])
         result = self.check(parsed_data)
         if result == True:
-            self.downstream_controller.send_to("PROXY", "BUY ME")!
+            self.send_trade_request({"Trade Data": {}})
         return;
         message = {}
         print(message)

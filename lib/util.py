@@ -1,9 +1,15 @@
-# A Generic market agnostic trade object
+# A Generic market agnostic trade object (sent from Acc to Broker/Trader)
 class Trade():
     market = None
     def __init__(self) -> None:
         pass
-    
+
+# A Generic market Agnostic trade request object (sent from Algo to Acc)
+class TradeRequest():
+    market = None
+    trade_data = None
+    def __init__(self) -> None:
+        pass
 # Colors for Printing to terminal
 class bcolors:
     HEADER = '\033[95m'

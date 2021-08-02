@@ -202,7 +202,8 @@ class Algorithm(Node):
                 self.config = json.load(config)
         except FileNotFoundError:
             print("Algorithm Config Is Missing!")
-
+    def send_trade_request(self, trade_data):
+        raise Exception("Override Me!")
     def setup(self):
         self.load_config()
         self.configure()
