@@ -16,7 +16,8 @@ import sys
 import csv
 from zmq.eventloop import ioloop, zmqstream
 from datetime import datetime
-from util import bcolors
+from enums import TradeType
+from util import bcolors, TradeRequest
 
 
 class Scalp(Algorithm):
@@ -94,9 +95,15 @@ class Scalp(Algorithm):
             next
         if self.count == self.window:
             #Make a Buy Request
-            print(bcolors.OKGREEN + "(" + "\u0024" + ") Buying " + self.ticker_name)            
+            print(bcolors.OKGREEN + "(" + "\u0024" + ") Buying " + self.ticker_name)
+            self.recent_trade_request =  TradeRequest()
+            self.recent_trade_request.set_market(self.system_name)
+            self.recent_trade_request.set_trade_type(TradeType.BUY_WITH_OCO)
+            self.recent_trade_request.set_purchase_price(-1)
+            self.recent_trade_request.set_sale_price(price * self.target_percent)
             return True
-    def send_trade_request(self, trade_data):
+    def send_most_recent_trade_request(self):
+        self.downstream_controller.send_to("PROXY", message.to_json(), topic=stream_name)
         pass
     def iterate(self, stream, msg):
         stream_name = self.upstream_socket_map[stream.socket]   
