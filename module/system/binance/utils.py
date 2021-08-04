@@ -25,12 +25,3 @@ def get_sleep_unit_for_interval(interval):
         return 5
     else:
         return res.value
-
-class Trade(Trade):
-    market = "Binance"
-    def __init__(self) -> None:
-        pass
-
-trade_type_mappings = {
-    
-}

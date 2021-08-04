@@ -26,7 +26,7 @@ class Account(BinanceNode):
     def __init__(self,system_name, ticker_name,test_mode=False) -> None:
         self.name = "Account"
         self.ticker_name = ticker_name
-        self.lot_size = 25 #Euros
+        self.lot_size = 25.0 #Euros
         super().__init__(system_name, self.name,test_mode)
         self.setup()
 
@@ -36,26 +36,27 @@ class Account(BinanceNode):
         self.setup_downstream()
         self.setup_heartbeat()
         self.build_mappings()
-        #self.get_ticker_config_from_market() # This Must Happen on Enable!
+        self.get_ticker_config_from_market() # This Must Happen on Enable!
     def iterate(self, stream,  msg):
         raw_data = msg[0].decode('utf-8')  # For Reaons beyond me, this is an array of data.
         data = {'topic': raw_data[:1], 'message': raw_data[1:]}
-        print(data)
-        return
-        algorithm_result = dict(data['message'])
+        algorithm_result = json.loads(data['message'])
         if algorithm_result["trade_type"] == 0b1 << 3:
             now = datetime.now().time()
             #print(self.name, " : ", now)
             # Buy With Sell
             message = {}
+            price = algorithm_result["purchase_price"] # 0.25
+
             message["symbol"] = self.ticker_name
-            price = algorithm_result["ticker_price"] # 0.25
-            quantity = round(self.lot_size / price, self.precision)
-            message["quantity"] =  quantity
-            message["target_price"] = algorithm_result["target_price"]
-            message["stop_price"] = algorithm_result["stop_price"]
+            
+            quantity = round(self.lot_size / price, self.qty_precision)
+            target_price = float(algorithm_result["target_price"])
+            message["quantity"] =  round(float(algorithm_result["quantity"]) / target_price, self.qty_precision)
+            message["target_price"] = round(target_price, self.precision)
+            message["stop_price"] = round(float(algorithm_result["stop_price"]), self.precision)
             message["trade_type"] = algorithm_result["trade_type"]
-            #print(message)
+            print(message)
             self.downstream_controller.send_to("PROXY", json.dumps(message));
         # Check to see if we have too many open trades or not
         if self.open_trades >= self.max_open_trades:
@@ -131,6 +132,8 @@ class Account(BinanceNode):
                 self.precision = int(math.log10(ts)) # Use this for rounding!
             if f["filterType"] == "LOT_SIZE":
                 self.min_qty = float(f["minQty"]) # Minimum number of units we can purchase
+                mq = 1/self.min_qty
+                self.qty_precision = int(math.log10(mq)) 
             
         pass
 
