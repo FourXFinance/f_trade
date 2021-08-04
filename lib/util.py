@@ -15,7 +15,7 @@ class TradeRequest():
     trade_type = None
     purchase_price = None
     def set_trade_type(self, trade_type):
-        acceptable_values = set(item.value for item in TradeType)
+        acceptable_values = set(item for item in TradeType)
         if trade_type in acceptable_values:
             self.trade_type = trade_type
         else:
@@ -24,11 +24,12 @@ class TradeRequest():
         self.purchase_type = purchase_type
     def set_sale_type(self, sale_type): #Unused
         self.sale_type = sale_type
-
+    def set_stop_price(self, price):
+        self.stop_price = price
     def set_purchase_price(self, price):
         self.purchase_price = price #Price = "-1" for MARKET PURCHASE
     def set_sale_price(self, price):
-        self.set_sale_price = price #Price = "-1" for MARKET PURCHASE
+        self.sale_price = price #Price = "-1" for MARKET PURCHASE
     def set_market(self, market):
         self.market = market
     def set_additional_data(self, misc_trade_date):

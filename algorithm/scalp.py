@@ -34,16 +34,13 @@ class Scalp(Algorithm):
         self.window = None
 
     def setup_config(self):
-        self.target_percent = self.config["configuration_options"]["target_growth"] or 1.03
-        self.window = int(self.config["configuration_options"]["window"]) or 3
+        self.target_percent = float(self.config["configuration_options"]["target_growth"])
+        self.window = int(self.config["configuration_options"]["window"])
         self.count = 0
         self.fail_count = 0
-    def iterate(self):
-        # To Be Used for Callbacks! - Coming Soon!!!
-        pass
     def clean(self):
-        self.previous_count = self.config["configuration_options"]["target_growth"] or 1.03
-        self.window = int(self.config["configuration_options"]["window"]) or 3
+        self.previous_count = float(self.config["configuration_options"]["target_growth"])
+        self.window = int(self.config["configuration_options"]["window"])
         self.count = 0
         self.fail_count = 0
     def check(self, data):
@@ -93,18 +90,26 @@ class Scalp(Algorithm):
             self.fail_count +=1
             #TODO: weight increase?
             next
-        if self.count == self.window:
+        if True:
             #Make a Buy Request
             print(bcolors.OKGREEN + "(" + "\u0024" + ") Buying " + self.ticker_name)
             self.recent_trade_request =  TradeRequest()
             self.recent_trade_request.set_market(self.system_name)
             self.recent_trade_request.set_trade_type(TradeType.BUY_WITH_OCO)
+            self.recent_trade_request.set_stop_price(price * 0.95)
             self.recent_trade_request.set_purchase_price(-1)
             self.recent_trade_request.set_sale_price(price * self.target_percent)
+            
             return True
     def send_most_recent_trade_request(self):
-        self.downstream_controller.send_to("PROXY", message.to_json(), topic=stream_name)
-        pass
+        message = {}
+        message["quantity"] =  25
+        message["purchase_price"] =  self.recent_trade_request.purchase_price
+        message["target_price"] = self.recent_trade_request.sale_price
+        message["stop_price"] = self.recent_trade_request.stop_price
+        message["trade_type"] = self.recent_trade_request.trade_type.value
+        print(message)
+        self.downstream_controller.send_to("PROXY", json.dumps(message))
     def iterate(self, stream, msg):
         stream_name = self.upstream_socket_map[stream.socket]   
         #print(stream_name)             
@@ -112,17 +117,12 @@ class Scalp(Algorithm):
         # Now we have the name of our stream!
         raw_data = msg[0].decode("utf-8")  # For Reaons beyond me, this is an array of data.
         #print(raw_data)
-        print(stream_name)
         data = {'topic': raw_data[:2], 'message': raw_data[2:]}
         parsed_data = pd.read_json(data["message"])
         result = self.check(parsed_data)
+        #result = True
         if result == True:
-            self.send_trade_request({"Trade Data": {}})
-        return;
-        message = {}
-        print(message)
-        #TODO: Tickers have an N:1 input:ouput mapping. Let's change this to a N:N (Output has N streams on the same port, different topics though)
-        self.downstream_controller.send_to("PROXY", message.to_json(), topic=stream_name)
+            self.send_most_recent_trade_request()
     def run(self):
         ioloop.IOLoop.instance().start()
             
