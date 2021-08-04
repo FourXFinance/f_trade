@@ -56,7 +56,7 @@ class Account(BinanceNode):
             message["target_price"] = round(target_price, self.precision)
             message["stop_price"] = round(float(algorithm_result["stop_price"]), self.precision)
             message["trade_type"] = algorithm_result["trade_type"]
-            print(message)
+            if self.test_mode : print(message) 
             self.downstream_controller.send_to("PROXY", json.dumps(message));
         # Check to see if we have too many open trades or not
         if self.open_trades >= self.max_open_trades:
@@ -76,7 +76,7 @@ class Account(BinanceNode):
                 raw_credentials = json.load(config)
                 #print(raw_credentials)
                 self.config = raw_credentials
-                #print(self.config)
+                if self.test_mode : print(self.config)
         except FileNotFoundError:
             print("config/generated/" + self.system_name + "/account/" + self.market_name + ".json")
             raise FileNotFoundError

@@ -12,6 +12,7 @@ from binance import Client, ThreadedWebsocketManager, AsyncClient
 import asyncio
 import numpy as np
 import pandas as pd
+from util import bcolors, TradeRequest
 import asyncio
 from zmq.eventloop import ioloop, zmqstream
 from binance.enums import *
@@ -58,10 +59,14 @@ class BinanceTrader(BinanceNode):
         raw_data = msg[0].decode('UTF-8')
         data = {'topic': raw_data[:1], 'message':raw_data[1:]}
         account_result = json.loads(data["message"])
-        print(account_result["quantity"])
-        order = self.client.order_market_buy(
-        symbol=account_result["symbol"],
-        quantity=account_result["quantity"])
+       # print(account_result["quantity"])
+        try:
+            order = self.client.order_market_buy(
+            symbol=account_result["symbol"],
+            quantity=account_result["quantity"])
+        except Exception as e:
+            print(bcolors.FAIL + str(e))
+        return
         # Did You know you can track the status of your order?
         # That's right. Every Order that is created gets an ID.
 
@@ -74,13 +79,16 @@ class BinanceTrader(BinanceNode):
         #    time.sleep(1)
 
         # This is blocking. but will be solved in the websocket update
-        order = self.client.create_oco_order(
-            symbol= account_result["symbol"],
-            side=SIDE_SELL,
-            stopLimitTimeInForce=TIME_IN_FORCE_GTC,
-            quantity=account_result["quantity"],
-            stopPrice=account_result["stop_price"],
-            price=account_result["target_price"])
+        try:
+            order = self.client.create_oco_order(
+                symbol= account_result["symbol"],
+                side=SIDE_SELL,
+                stopLimitTimeInForce=TIME_IN_FORCE_GTC,
+                quantity=account_result["quantity"],
+                stopPrice=account_result["stop_price"],
+                price=account_result["target_price"])
+        except Exception as e:
+            print(bcolors.FAIL + str(e))
         pass
     def run(self):
         ioloop.IOLoop.instance().start()

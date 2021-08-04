@@ -597,7 +597,6 @@ if (! $pid) {
 } else {
 
 	# Only The Parent Does This.
-	print color('bold ');
 	ping_node($trader_config->{heartbeat_port}, "$system_name.trader");
 }
 

@@ -33,3 +33,6 @@ tickers:
   algorithms:
   - name: scalp
     enabled: True
+    config:
+      window: 0
+      target_growth: 1.03

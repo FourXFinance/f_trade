@@ -212,7 +212,6 @@ class Algorithm(Node):
 
     def configure(self):
         for source in self.config["available_ticker_sources"]:
-            print(source)
             self.upstream_controller.add_stream(str(source),
                                                 self.config["algorithm_port"],
                                                 zmq.SUB,

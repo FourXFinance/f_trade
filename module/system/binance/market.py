@@ -88,7 +88,7 @@ class MarketWorker(BinanceNode):
         #print(df.to_json())
         #print(ticker_name + "\t" + str(self.tickers_with_topic[ticker_name]))
         now = datetime.now().time()
-        print(self.name, " : ", now)
+        if self.test_mode : print(self.name, " : ", now)
         self.send_to(self.interval, df.to_json(), topic=self.tickers_with_topic[ticker_name])
 
     async def get_data_for_ticker(self, ticker):
