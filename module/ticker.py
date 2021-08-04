@@ -41,7 +41,7 @@ class Ticker(Node):
             with open(os.path.join(os.getcwd() + "/config/generated/" + self.system_name + "/algorithm/"  + self.ticker_name + "/" + filename), 'r') as config:
                 raw_config = json.load(config)
                 self.algorithm_config[raw_config["algorithm_name"]] = raw_config
-        print(self.algorithm_config)
+        # print(self.algorithm_config)
 
     def setup_streams(self):
         required_sources = self.config["required_sources"]
@@ -86,7 +86,7 @@ class Ticker(Node):
         # print(self.downstream_name_map)
         stream_name = self.upstream_socket_map[stream.socket]
         #stream = self.downstream_controller.get_stream(stream_name)
-        print(stream_name)
+        # (stream_name)
         #print(stream)
         # Now we have the name of our stream!
         raw_data = msg[0].decode("utf-8")  # For Reaons beyond me, this is an array of data.

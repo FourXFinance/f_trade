@@ -72,7 +72,7 @@ class MarketWorker(BinanceNode):
             return
         recent_trades =  np.array(raw_data)
         df = pd.DataFrame(data=recent_trades)
-        print(df.to_json())
+        #print(df.to_json())
         #print(ticker_name + "\t" + str(self.tickers_with_topic[ticker_name]))
         self.send_to(self.interval, df.to_json(), topic=self.tickers_with_topic[ticker_name])
     
@@ -85,7 +85,7 @@ class MarketWorker(BinanceNode):
             print(e)
         recent_trades = np.array(raw_data)
         df = pd.DataFrame(data=recent_trades)
-        print(df.to_json())
+        #print(df.to_json())
         #print(ticker_name + "\t" + str(self.tickers_with_topic[ticker_name]))
         now = datetime.now().time()
         print(self.name, " : ", now)

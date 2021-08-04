@@ -31,5 +31,5 @@ tickers:
 - name: "DOGEEUR"
   enabled: True
   algorithms:
-  - name: always_buy
+  - name: scalp
     enabled: True

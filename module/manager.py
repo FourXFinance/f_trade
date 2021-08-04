@@ -36,7 +36,7 @@ class Manager(Node):
         raw_data = msg[0]  # For Reaons beyond me, this is an array of data.
         data = {'topic': raw_data[:1], 'message': raw_data[1:]}
         message = pd.read_json(data["message"])
-        print(stream_name)
+        #print(stream_name)
         self.downstream_controller.send_to(stream_name, message.to_json())
 
     def load_configs(self):
@@ -91,7 +91,7 @@ class Manager(Node):
             for market in self.ticker_configs[ticker]["required_sources"].keys():
                 for interval in self.ticker_configs[ticker]["required_sources"][market].keys():
                     port = self.ticker_configs[ticker]["required_sources"][market][interval]
-                    print(port,".", interval)
+                    #print(port,".", interval)
                     self.downstream_controller.add_stream(
                         ticker + "." + interval,
                         port,

@@ -108,7 +108,6 @@ class Scalp(Algorithm):
         message["target_price"] = self.recent_trade_request.sale_price
         message["stop_price"] = self.recent_trade_request.stop_price
         message["trade_type"] = self.recent_trade_request.trade_type.value
-        print(message)
         self.downstream_controller.send_to("PROXY", json.dumps(message))
     def iterate(self, stream, msg):
         stream_name = self.upstream_socket_map[stream.socket]   
