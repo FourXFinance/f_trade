@@ -1,6 +1,19 @@
 #!/usr/bin/perl
 
 # This script builds the f_trader system
+# But how does it build it?
+# First we check to make sure a config for the system specified exists
+# Then we check the validity of the config (This can be improved with a hashmap)
+# Then we build a logical hash of the system ports
+# Then we write these hashes as configs for each node to read
+# Then we start up each node
+# Then we ping each node to make sure they pass startup check (Nifty!)
+# TODO: After this is done we then start the executive node (Who then takes over)
+#
+#
+# Usage: 
+# -t to specify test mode
+# -s [SYSTEM_NAME] specifies which system we are building.
 use strict;
 use warnings;
 use YAML::XS 'LoadFile';
@@ -18,7 +31,7 @@ my $std_err_tty = 'null';
 my $cur_dir = getcwd;
 my $system_name = undef;
 my $dry_run = defined $opt_d;
-# Format Strings
+# Format String. Makes things pretty.
 my $f = "%-40s%30s\n";
 
 if (defined $opt_t){
@@ -48,7 +61,7 @@ sub ping_node {
 		print "Succesful Heartbeat: $target_node_name ($target_node_port)\n";
 	}
 }
-
+# Configs for each node 'type'
 my $config;
 my $system_config = {};
 my $ticker_config = {};
@@ -58,7 +71,7 @@ my $account_config = {};
 my $trader_config = {};
 my $manager_config = {};
 
-# Load the Config of the specified system. or Die
+# STEP 1: Load the Config of the specified system. or Die
 eval  {
 	$config = LoadFile("config/system/$system_name.yaml");
 	1;
@@ -68,7 +81,7 @@ eval  {
 };
 system("perl $cur_dir/scripts/shutdown.pl");
 
-# Validate System Config
+# STEP 2: Validate System Config
 $system_config= $config->{system};
 
 
@@ -139,7 +152,7 @@ printf("$f", "Error:" , "No Heart Beat Server Port Defined") and die ("Startup E
 my $markets = $config->{markets};
 printf("$f", "Error:" , "No Markets Defined") and die ("Startup Error") unless $markets;
 
-
+# STEP 3: Build logical System
 my $current_ticker_port = $base_ticker_port;
 my $current_algorithm_port = $base_algorithm_port;
 my $current_market_base = $base_market_port;
@@ -261,6 +274,8 @@ for my $ticker (@$tickers) {
 #print(Dumper($algorithm_config));
 # A this tage the system is 'valid'. We now conver these hash maps into json config files for our nodes to load
 # Delete Old Configs
+#
+# STEP 4: Write the configs for each node
 # TODO: Put in a flag for no-delete
 qx\rm -rf ./config/generated\;
 qx\mkdir ./config/generated/\;
@@ -360,7 +375,7 @@ close(FH);
 
 exit 0 if $dry_run;
 
-
+# STAGE 5: Start Each Node and Ping them to see if they are alive.
 # At this stage, all the configuration files (.json) have been created and written to disk. Start each node and ping them
 print color('bold yellow');
 print("Starting Market Nodes\n");
@@ -606,3 +621,5 @@ print color('green');
 print("\n");
 print color('bold magenta');
 print ("F_Trader ($system_name) has Started in State: Waiting for Executive\n");
+
+#TODO: Hand over control to the executive node
