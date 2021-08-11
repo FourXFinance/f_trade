@@ -1,0 +1,38 @@
+---
+system:
+  name: F_Trader Minimal # System Name. Serves no purpose
+  override_system_name: binance  # What we are saying the system name is. (What class of nodes we use)
+  test: True #TODO: pass test flag to modules
+  logs: True #TODO: Start logger if this flag is enabled
+  version: 3 # Serves no purpose
+  base_market_port: 3000 # What port do market nodes start on.
+  base_market_offset: 100 # What is the offset for each subsequant node (base_market_port + (N-1) x base_market_offset) for N'th market
+  base_ticker_port: 4000
+  base_ticker_offset: 100
+  max_supported_algorithms_per_ticker: 50 # 0 -> 49 #Unused
+  base_algorithm_port: 5000
+  algorithm_offset: 1
+  algorithm_proxy_offset: 50 # Where do all the algorithms send their result to?
+  account_offset: 51 # Where does that proxy connect to? (Account)
+  heartbeat_base_port: 14000
+  broker_proxy_port: 6000 # TODO: Update how broker works
+  trader_proxy_port: 7000
+  trader_enabled: False # Disable this if you do not want to open or close trades, but run the entire system
+  logger_port: 10000
+  logger_proxy_port: 9000
+  viewer: False # Do we start up the f_viewer.git project
+  viewer_port: 11000
+markets:
+- name: Binance
+  enabled: True
+  enabled_tick_sources:
+  - RT
+tickers:
+- name: "DOGEEUR"
+  enabled: True
+  algorithms:
+  - name: scalp
+    enabled: True
+    config:
+      window: 0
+      target_growth: 1.03
