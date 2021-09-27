@@ -7,7 +7,7 @@ This trading system is designed to be agnostic of most limitations:
     - Algorithm Language
     - Market
     - Commodity
-Designed by Warren Fletcher, Benjamin Wolfaardtm Julia Ruiter, and Björn Dierks. (c) FourXFinance
+Designed by Warren Fletcher, Ben Wolfaardt Julia Ruiter, and Björn Dierks. (c) FourXFinance
 
 ## Philosophy Of F Trader
 
